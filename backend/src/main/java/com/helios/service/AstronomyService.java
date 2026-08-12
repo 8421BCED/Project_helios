@@ -10,12 +10,30 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AstronomyService {
 
     private static final Logger log = LoggerFactory.getLogger(AstronomyService.class);
     private final RestTemplate restTemplate;
+
+    // Cache to prevent hitting USNO API limits
+    private final Map<String, CachedCelestial> cache = new ConcurrentHashMap<>();
+
+    private static class CachedCelestial {
+        final Map<String, Object> data;
+        final long expiryTime;
+
+        CachedCelestial(Map<String, Object> data, long ttlMs) {
+            this.data = data;
+            this.expiryTime = System.currentTimeMillis() + ttlMs;
+        }
+
+        boolean isExpired() {
+            return System.currentTimeMillis() > expiryTime;
+        }
+    }
 
     public AstronomyService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -37,6 +55,26 @@ public class AstronomyService {
             tz = "5.5";
         }
 
+        // Round coordinates to 1 decimal place to minimize external API hits and group nearby lookups
+        String cacheKey;
+        try {
+            String[] latLon = coords.split(",");
+            double roundedLat = Math.round(Double.parseDouble(latLon[0]) * 10.0) / 10.0;
+            double roundedLon = Math.round(Double.parseDouble(latLon[1]) * 10.0) / 10.0;
+            cacheKey = String.format("%s_%.1f,%.1f_%s", date, roundedLat, roundedLon, tz);
+        } catch (Exception e) {
+            cacheKey = date + "_" + coords + "_" + tz;
+        }
+
+        CachedCelestial cached = cache.get(cacheKey);
+        if (cached != null && !cached.isExpired()) {
+            log.debug("Serving cached celestial data for key: {}", cacheKey);
+            return cached.data;
+        }
+
+        // Clean up expired cache entries periodically
+        cache.entrySet().removeIf(entry -> entry.getValue().isExpired());
+
         String url = String.format(
                 "https://aa.usno.navy.mil/api/rstt/oneday?date=%s&coords=%s&tz=%s",
                 date, coords, tz
@@ -47,12 +85,18 @@ public class AstronomyService {
             Map<String, Object> response = restTemplate.getForObject(url, Map.class);
             if (response != null) {
                 transformUsnoResponse(response);
+                // Cache for 12 hours since astronomical times only shift very slightly across a single day
+                cache.put(cacheKey, new CachedCelestial(response, 43200000L));
+                return response;
             }
-            return response;
         } catch (Exception e) {
             log.warn("Failed to fetch celestial data from USNO: {}. Calculating astronomical approximations...", e.getMessage());
-            return generateFallbackCelestial(date, coords, tz);
         }
+
+        // Cache fallback calculations for 5 minutes to prevent spamming
+        Map<String, Object> fallback = generateFallbackCelestial(date, coords, tz);
+        cache.put(cacheKey, new CachedCelestial(fallback, 300000L));
+        return fallback;
     }
 
     /**

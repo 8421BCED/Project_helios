@@ -8,6 +8,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class WeatherService {
@@ -18,6 +19,23 @@ public class WeatherService {
     @Value("${helios.keys.openweather}")
     private String openWeatherKey;
 
+    // Cache to prevent hitting OpenWeather API limits
+    private final Map<String, CachedWeather> cache = new ConcurrentHashMap<>();
+
+    private static class CachedWeather {
+        final Map<String, Object> data;
+        final long expiryTime;
+
+        CachedWeather(Map<String, Object> data, long ttlMs) {
+            this.data = data;
+            this.expiryTime = System.currentTimeMillis() + ttlMs;
+        }
+
+        boolean isExpired() {
+            return System.currentTimeMillis() > expiryTime;
+        }
+    }
+
     public WeatherService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
@@ -27,6 +45,20 @@ public class WeatherService {
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> getWeather(double lat, double lon) {
+        // Round coordinates to 1 decimal place (~11km grid resolution) to minimize external API hits
+        double roundedLat = Math.round(lat * 10.0) / 10.0;
+        double roundedLon = Math.round(lon * 10.0) / 10.0;
+        String cacheKey = String.format("%.1f,%.1f", roundedLat, roundedLon);
+
+        CachedWeather cached = cache.get(cacheKey);
+        if (cached != null && !cached.isExpired()) {
+            log.debug("Serving cached weather for key: {}", cacheKey);
+            return cached.data;
+        }
+
+        // Clean up expired cache entries periodically
+        cache.entrySet().removeIf(entry -> entry.getValue().isExpired());
+
         String url = String.format(
                 "https://api.openweathermap.org/data/2.5/weather?lat=%.4f&lon=%.4f&appid=%s&units=metric",
                 lat, lon, openWeatherKey
@@ -34,11 +66,20 @@ public class WeatherService {
 
         try {
             log.debug("Fetching weather for lat: {}, lon: {}", lat, lon);
-            return restTemplate.getForObject(url, Map.class);
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            if (response != null) {
+                // Cache successful weather lookup for 30 minutes
+                cache.put(cacheKey, new CachedWeather(response, 1800000L));
+                return response;
+            }
         } catch (Exception e) {
             log.warn("Failed to fetch weather from OpenWeather: {}. Generating mock telemetry...", e.getMessage());
-            return generateFallbackWeather(lat, lon);
         }
+
+        // Cache fallback simulation for 1 minute to prevent immediate spamming of fallback generation
+        Map<String, Object> fallback = generateFallbackWeather(lat, lon);
+        cache.put(cacheKey, new CachedWeather(fallback, 60000L));
+        return fallback;
     }
 
     /**
