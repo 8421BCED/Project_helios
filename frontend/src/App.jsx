@@ -150,16 +150,26 @@ export default function App() {
     }
   };
 
+  const loggedInUserRef = useRef(loggedInUser);
+  useEffect(() => {
+    loggedInUserRef.current = loggedInUser;
+  }, [loggedInUser]);
+
+  const hasUser = !!loggedInUser;
+
   // --- D. HEARTBEAT INTERVAL (Updates online status and time spent) ---
   useEffect(() => {
-    if (!loggedInUser) return;
+    if (!hasUser) return;
 
     // Send initial ping
     const sendPing = () => {
+      const currentUser = loggedInUserRef.current;
+      if (!currentUser) return;
+
       fetch('http://localhost:8080/api/auth/ping', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: loggedInUser.username, deltaSeconds: 10 })
+        body: JSON.stringify({ username: currentUser.username, deltaSeconds: 10 })
       })
       .then(res => {
         if (res.status === 404) {
@@ -171,8 +181,9 @@ export default function App() {
         return res.json();
       })
       .then(updatedUser => {
-        // Keep localized state in sync with duration
-        const merged = { ...loggedInUser, ...updatedUser };
+        // Keep localized state in sync with duration and click tracking
+        const merged = { ...loggedInUserRef.current, ...updatedUser };
+        setLoggedInUser(merged);
         localStorage.setItem('helios_user', JSON.stringify(merged));
       })
       .catch(err => console.error("Heartbeat sync error:", err));
@@ -181,7 +192,7 @@ export default function App() {
     sendPing();
     const interval = setInterval(sendPing, 10000); // Heartbeat ping every 10 seconds
     return () => clearInterval(interval);
-  }, [loggedInUser]);
+  }, [hasUser]);
 
   // Live UTC Clock
   useEffect(() => {
@@ -431,12 +442,30 @@ export default function App() {
       })
     })
     .then(async res => {
-      const data = await res.json();
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (err) {
+        console.warn("Could not parse response as JSON:", err);
+      }
       if (!res.ok) throw new Error(data.error || "CRUD Action failed");
       return data;
     })
-    .then(() => {
+    .then((savedUser) => {
+      // Clear inputs
+      setCrudUsername('');
+      setCrudEmail('');
+      setCrudPassword('');
+      setCrudError('');
       setIsCrudModalOpen(false);
+
+      // If the admin edited their own active user details, sync localized state
+      if (crudMode === 'edit' && loggedInUser && loggedInUser.id === savedUser.id) {
+        const merged = { ...loggedInUser, ...savedUser };
+        setLoggedInUser(merged);
+        localStorage.setItem('helios_user', JSON.stringify(merged));
+      }
+
       fetchAdminUsers();
     })
     .catch(err => setCrudError(err.message));
