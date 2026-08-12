@@ -3,8 +3,17 @@ import React, { useEffect, useRef, useState } from 'react';
 // Helper function to interpolate satellite positions smoothly in the Earth-Fixed frame
 function getInterpolatedPosition(sat, time, result) {
   const Cesium = window.Cesium;
+  if (!sat) {
+    return Cesium.Cartesian3.ZERO;
+  }
   if (!sat.groundTrack || sat.groundTrack.length === 0) {
-    return Cesium.Cartesian3.fromDegrees(sat.longitude, sat.latitude, sat.altitude * 1000, Cesium.Ellipsoid.WGS84, result);
+    return Cesium.Cartesian3.fromDegrees(
+      sat.longitude || 0, 
+      sat.latitude || 0, 
+      (sat.altitude || 0) * 1000, 
+      Cesium.Ellipsoid.WGS84, 
+      result
+    );
   }
 
   const baseTime = sat.baseTimeJulian || Cesium.JulianDate.fromDate(new Date());
@@ -234,8 +243,8 @@ export default function CesiumGlobe({
 
     return () => {
       clearInterval(checkInterval);
-      if (handler) handler.destroy();
-      if (viewer) {
+      if (handler && !handler.isDestroyed()) handler.destroy();
+      if (viewer && !viewer.isDestroyed()) {
         viewer.destroy();
       }
     };
@@ -290,7 +299,9 @@ export default function CesiumGlobe({
 
     viewer.scene.preUpdate.addEventListener(animateScene);
     return () => {
-      viewer.scene.preUpdate.removeEventListener(animateScene);
+      if (viewer && !viewer.isDestroyed()) {
+        viewer.scene.preUpdate.removeEventListener(animateScene);
+      }
     };
   }, [isSpinning, isViewerReady]);
 
@@ -511,6 +522,12 @@ export default function CesiumGlobe({
         }
       }
     }
+    return () => {
+      if (viewer && !viewer.isDestroyed() && orbitPathEntityRef.current) {
+        viewer.entities.remove(orbitPathEntityRef.current);
+        orbitPathEntityRef.current = null;
+      }
+    };
   }, [selectedSatellite, showOrbits, isViewerReady]);
 
   return (
