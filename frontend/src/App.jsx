@@ -90,6 +90,18 @@ export default function App() {
     window.history.pushState({}, '', path);
   };
 
+  const handleCategorySelect = (group) => {
+    setSelectedGroup(group);
+    handleSelectSatellite(null);
+    if (loggedInUser) {
+      fetch('http://localhost:8080/api/auth/interest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: loggedInUser.username, category: group })
+      }).catch(err => console.error("Error recording user interest:", err));
+    }
+  };
+
   // --- D. HEARTBEAT INTERVAL (Updates online status and time spent) ---
   useEffect(() => {
     if (!loggedInUser) return;
@@ -102,6 +114,11 @@ export default function App() {
         body: JSON.stringify({ username: loggedInUser.username, deltaSeconds: 10 })
       })
       .then(res => {
+        if (res.status === 404) {
+          handleLogout();
+          alert("Your account has been deleted by the administrator.");
+          throw new Error("User account has been deleted");
+        }
         if (!res.ok) throw new Error("Ping failed");
         return res.json();
       })
@@ -477,6 +494,7 @@ export default function App() {
                 <th>Username</th>
                 <th>Email Address</th>
                 <th>System Status</th>
+                <th>Primary Interest</th>
                 <th>Total Session Duration</th>
                 <th>Actions</th>
               </tr>
@@ -493,6 +511,16 @@ export default function App() {
                     ) : (
                       <span className="status-badge offline">Offline</span>
                     )}
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ color: 'var(--neon-blue)', fontWeight: 600 }}>
+                        {user.primaryInterest || 'Unspecified'}
+                      </span>
+                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
+                        Clicks: Station ({user.stationsClicks || 0}) | Weather ({user.weatherClicks || 0}) | Starlink ({user.starlinkClicks || 0}) | GPS ({user.gpsClicks || 0})
+                      </span>
+                    </div>
                   </td>
                   <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{formatTimeSpent(user.totalTimeSpentSeconds)}</td>
                   <td>
@@ -714,25 +742,25 @@ export default function App() {
             <span className="control-label">Satellite Category</span>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <button 
-                onClick={() => { setSelectedGroup('stations'); handleSelectSatellite(null); }}
+                onClick={() => handleCategorySelect('stations')}
                 className={`btn-cyber ${selectedGroup === 'stations' ? 'active' : ''}`}
               >
                 Space Stations
               </button>
               <button 
-                onClick={() => { setSelectedGroup('weather'); handleSelectSatellite(null); }}
+                onClick={() => handleCategorySelect('weather')}
                 className={`btn-cyber ${selectedGroup === 'weather' ? 'active' : ''}`}
               >
                 Weather
               </button>
               <button 
-                onClick={() => { setSelectedGroup('starlink'); handleSelectSatellite(null); }}
+                onClick={() => handleCategorySelect('starlink')}
                 className={`btn-cyber ${selectedGroup === 'starlink' ? 'active' : ''}`}
               >
                 Starlink
               </button>
               <button 
-                onClick={() => { setSelectedGroup('gps'); handleSelectSatellite(null); }}
+                onClick={() => handleCategorySelect('gps')}
                 className={`btn-cyber ${selectedGroup === 'gps' ? 'active' : ''}`}
               >
                 GPS
