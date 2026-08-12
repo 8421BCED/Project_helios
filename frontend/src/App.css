@@ -1,0 +1,396 @@
+.app-container {
+  display: grid;
+  grid-template-rows: 60px 1fr 180px;
+  grid-template-columns: 340px 1fr 360px;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Cesium Globe Canvas container occupies the entire viewport */
+.globe-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+
+/* Dashboard Overlays */
+.header-overlay {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border-glow);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  color: var(--neon-blue);
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.6));
+}
+
+.logo-section h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: linear-gradient(to right, #fff, var(--neon-blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.logo-section span {
+  font-size: 10px;
+  background: var(--neon-blue);
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.header-stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--neon-green);
+  box-shadow: 0 0 8px var(--neon-green);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+/* Sidebar Overlays */
+.left-sidebar {
+  grid-column: 1;
+  grid-row: 2;
+  z-index: 10;
+  margin: 15px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.right-sidebar {
+  grid-column: 3;
+  grid-row: 2;
+  z-index: 10;
+  margin: 15px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* Bottom Ticker Overlay */
+.bottom-overlay {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  z-index: 10;
+  margin: 0 15px 15px 15px;
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 20px;
+  padding: 15px 20px;
+  overflow: hidden;
+}
+
+/* Common Widget Styles */
+.widget-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--neon-blue);
+  margin-bottom: 12px;
+  border-left: 3px solid var(--neon-blue);
+  padding-left: 8px;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+
+/* Dashboard UI Interactive Elements */
+.btn-cyber {
+  background: rgba(0, 240, 255, 0.05);
+  border: 1px solid var(--border-glow);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-cyber:hover {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: var(--neon-blue);
+  box-shadow: var(--glow-blue);
+}
+
+.btn-cyber.active {
+  background: rgba(0, 240, 255, 0.25);
+  border-color: var(--neon-blue);
+  box-shadow: var(--glow-blue);
+}
+
+.btn-cyber:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input-cyber {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-glow);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.input-cyber:focus {
+  border-color: var(--neon-blue);
+}
+
+/* Satellite Selection List */
+.satellite-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.satellite-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.satellite-item:hover {
+  background: rgba(0, 240, 255, 0.04);
+  border-color: rgba(0, 240, 255, 0.2);
+}
+
+.satellite-item.selected {
+  background: rgba(0, 240, 255, 0.1);
+  border-color: var(--neon-blue);
+  box-shadow: inset 0 0 8px rgba(0, 240, 255, 0.1);
+}
+
+.sat-name {
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.sat-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Telemetry Stats Grid */
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.telemetry-card {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.telemetry-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+.telemetry-value {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--neon-green);
+  text-shadow: var(--glow-green);
+}
+
+/* Weather & Solar panels */
+.weather-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.weather-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.weather-val {
+  font-family: var(--font-mono);
+  color: var(--neon-orange);
+}
+
+/* NASA APOD Layout */
+.apod-content {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  height: 100%;
+}
+
+.apod-img {
+  width: 140px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border-glow);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+}
+
+.apod-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.apod-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--neon-blue);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.apod-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* USNO Astronomical Timetables */
+.astronomy-widget {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.astro-times {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.astro-time-box {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.astro-time-lbl {
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.astro-time-val {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--neon-blue);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .app-container {
+    grid-template-rows: 60px 1fr 200px;
+    grid-template-columns: 280px 1fr 280px;
+  }
+  .left-sidebar, .right-sidebar {
+    margin: 8px;
+    padding: 12px;
+  }
+}

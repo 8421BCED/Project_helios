@@ -1,0 +1,22 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: helios-backend
+  profiles:
+    include: local
+
+helios:
+  storage-path: data/satellites.json
+  keys:
+    openweather: ${OPENWEATHER_API_KEY:placeholder}
+    nasa: ${NASA_API_KEY:placeholder}
+  spacetrack:
+    identity: ""
+    password: ""
+
+logging:
+  level:
+    org.springframework.web: INFO
+    com.helios: DEBUG

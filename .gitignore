@@ -1,0 +1,37 @@
+# Node / Frontend dependencies
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Maven / Java Build outputs
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.tar.gz
+
+# Local configuration secrets
+backend/src/main/resources/application-local.yml
+plans/
+
+# IDE and Editor configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.DS_Store
+
+# OS generated files
+Thumbs.db
+db.lck
