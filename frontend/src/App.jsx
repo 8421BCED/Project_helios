@@ -23,6 +23,10 @@ export default function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
+  const [isValidating, setIsValidating] = useState(() => {
+    return !!localStorage.getItem('helios_user');
+  });
+
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
   const [authUsername, setAuthUsername] = useState('');
@@ -88,7 +92,51 @@ export default function App() {
 
   const navigateTo = (path) => {
     window.history.pushState({}, '', path);
+    setCurrentPath(path);
   };
+
+  // --- C2. INITIAL SESSION VALIDATION (Checks user existence on mount/refresh) ---
+  useEffect(() => {
+    const saved = localStorage.getItem('helios_user');
+    if (!saved) {
+      setIsValidating(false);
+      return;
+    }
+    try {
+      const parsed = JSON.parse(saved);
+      // Validate cached session on startup with a delta of 0 seconds
+      fetch('http://localhost:8080/api/auth/ping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: parsed.username, deltaSeconds: 0 })
+      })
+      .then(res => {
+        if (res.status === 404) {
+          handleLogout();
+          alert("Your account has been deleted by the administrator.");
+          throw new Error("User account deleted");
+        }
+        if (!res.ok) throw new Error("Validation ping failed");
+        return res.json();
+      })
+      .then(updatedUser => {
+        const merged = { ...parsed, ...updatedUser };
+        setLoggedInUser(merged);
+        localStorage.setItem('helios_user', JSON.stringify(merged));
+      })
+      .catch(err => {
+        console.error("Initial session verification check:", err);
+      })
+      .finally(() => {
+        setIsValidating(false);
+      });
+    } catch (e) {
+      console.error("Session parse error during validation initialization:", e);
+      localStorage.removeItem('helios_user');
+      setLoggedInUser(null);
+      setIsValidating(false);
+    }
+  }, []);
 
   const handleCategorySelect = (group) => {
     setSelectedGroup(group);
@@ -438,6 +486,16 @@ export default function App() {
   );
 
   // --- G. RENDER CONTROLS ---
+
+  if (isValidating) {
+    return (
+      <div className="auth-page-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'var(--neon-blue)', fontSize: '18px', fontWeight: 600 }}>
+          Validating Security Session...
+        </div>
+      </div>
+    );
+  }
 
   // 1. ADMIN VIEW SCREEN
   if (currentPath === '/admin') {
