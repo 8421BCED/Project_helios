@@ -5,10 +5,10 @@ HELIOS ENVIRONMENTAL DASHBOARD - API ENDPOINTS DOCUMENTATION
 Total Endpoints: 12
 
 --------------------------------------------------------------------------------
-1. AUTHENTICATION & SESSION ENDPOINTS (/api/auth)
+1. AUTHENTICATION & SESSION ENDPOINTS
 --------------------------------------------------------------------------------
 
-- POST /api/auth/register
+- POST http://localhost:8080/api/auth/register
   - Description: Registers a new user account in the database.
   - Request Body (JSON):
     {
@@ -18,7 +18,7 @@ Total Endpoints: 12
     }
   - Response: 200 OK with the created User object, or 400 Bad Request if username/email exists.
 
-- POST /api/auth/login
+- POST http://localhost:8080/api/auth/login
   - Description: Validates credentials and logs the user in.
   - Request Body (JSON):
     {
@@ -27,7 +27,7 @@ Total Endpoints: 12
     }
   - Response: 200 OK with the authenticated User object, or 401 Unauthorized.
 
-- POST /api/auth/ping
+- POST http://localhost:8080/api/auth/ping
   - Description: Heartbeat endpoint to track active session time and update "Last Active" timestamp.
   - Request Body (JSON):
     {
@@ -36,7 +36,7 @@ Total Endpoints: 12
     }
   - Response: 200 OK with the updated User object, or 404 Not Found if user has been deleted.
 
-- POST /api/auth/interest
+- POST http://localhost:8080/api/auth/interest
   - Description: Telemetry endpoint to record user clicks on satellite categories (for user interest tracking).
   - Request Body (JSON):
     {
@@ -47,17 +47,17 @@ Total Endpoints: 12
 
 
 --------------------------------------------------------------------------------
-2. ADMINISTRATIVE ENDPOINTS (/api/admin)
+2. ADMINISTRATIVE ENDPOINTS
    Note: All admin endpoints require the "X-Admin-Password" header set to "sweet".
 --------------------------------------------------------------------------------
 
-- GET /api/admin/users
+- GET http://localhost:8080/api/admin/users
   - Description: Retrieves a list of all users in the system, including click telemetry and primary interest analytics.
   - Request Headers:
     X-Admin-Password: sweet
   - Response: 200 OK with a list of User objects.
 
-- POST /api/admin/users
+- POST http://localhost:8080/api/admin/users
   - Description: Admin capability to register/create a new user.
   - Request Headers:
     X-Admin-Password: sweet
@@ -69,7 +69,8 @@ Total Endpoints: 12
     }
   - Response: 201 Created with the created User object, or 400 Bad Request.
 
-- PUT /api/admin/users/{id}
+- PUT http://localhost:8080/api/admin/users/{id}
+  - Example URL: http://localhost:8080/api/admin/users/1
   - Description: Admin capability to update credentials or email address of a specific user.
   - Request Headers:
     X-Admin-Password: sweet
@@ -81,7 +82,8 @@ Total Endpoints: 12
     }
   - Response: 200 OK with the updated User object, or 400 Bad Request / 404 Not Found.
 
-- DELETE /api/admin/users/{id}
+- DELETE http://localhost:8080/api/admin/users/{id}
+  - Example URL: http://localhost:8080/api/admin/users/1
   - Description: Admin capability to delete a user by ID.
   - Request Headers:
     X-Admin-Password: sweet
@@ -89,16 +91,17 @@ Total Endpoints: 12
 
 
 --------------------------------------------------------------------------------
-3. SATELLITE TELEMETRY ENDPOINTS (/api/satellites)
+3. SATELLITE TELEMETRY ENDPOINTS
 --------------------------------------------------------------------------------
 
-- GET /api/satellites/{group}
+- GET http://localhost:8080/api/satellites/{group}
+  - Example URL: http://localhost:8080/api/satellites/weather
   - Description: Retrieves calculated geodetic states (lat, lon, alt, velocity) for all active satellites in the given group.
   - Path Variables:
     group: "stations" | "weather" | "starlink" | "gps"
   - Response: 200 OK with a list of propagated satellite coordinates.
 
-- POST /api/satellites/refresh
+- POST http://localhost:8080/api/satellites/refresh
   - Description: Manually triggers the backend to pull fresh TLE orbital elements from CelesTrak.
   - Response: 200 OK with confirmation message.
 
@@ -107,14 +110,16 @@ Total Endpoints: 12
 4. ENVIRONMENTAL & METEOROLOGICAL ENDPOINTS
 --------------------------------------------------------------------------------
 
-- GET /api/weather
+- GET http://localhost:8080/api/weather
+  - Example URL: http://localhost:8080/api/weather?lat=40.7128&lon=-74.0060
   - Description: Retrieves current weather coordinates data from Open-Meteo.
   - Query Parameters:
     lat: latitude coordinate (double, e.g. 40.7128)
     lon: longitude coordinate (double, e.g. -74.0060)
   - Response: 200 OK with local weather metrics.
 
-- GET /api/astronomy
+- GET http://localhost:8080/api/astronomy
+  - Example URL: http://localhost:8080/api/astronomy?coords=40.7128,-74.0060
   - Description: Retrieves Sun and Moon rise, transit, and set times from the US Naval Observatory API.
   - Query Parameters:
     coords: "latitude,longitude" (string, e.g. "40.7128,-74.0060")
