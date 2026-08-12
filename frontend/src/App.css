@@ -39,7 +39,7 @@
 
 .logo-icon {
   color: var(--neon-blue);
-  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.6));
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
 }
 
 .logo-section h1 {
@@ -48,7 +48,7 @@
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
-  background: linear-gradient(to right, #fff, var(--neon-blue));
+  background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0.7));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -163,7 +163,7 @@
 
 /* Dashboard UI Interactive Elements */
 .btn-cyber {
-  background: rgba(0, 240, 255, 0.05);
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border-glow);
   color: #fff;
   padding: 10px 14px;
@@ -180,13 +180,13 @@
 }
 
 .btn-cyber:hover {
-  background: rgba(0, 240, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
   border-color: var(--neon-blue);
   box-shadow: var(--glow-blue);
 }
 
 .btn-cyber.active {
-  background: rgba(0, 240, 255, 0.25);
+  background: rgba(255, 255, 255, 0.2);
   border-color: var(--neon-blue);
   box-shadow: var(--glow-blue);
 }
@@ -235,14 +235,14 @@
 }
 
 .satellite-item:hover {
-  background: rgba(0, 240, 255, 0.04);
-  border-color: rgba(0, 240, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .satellite-item.selected {
-  background: rgba(0, 240, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   border-color: var(--neon-blue);
-  box-shadow: inset 0 0 8px rgba(0, 240, 255, 0.1);
+  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.05);
 }
 
 .sat-name {
@@ -403,18 +403,20 @@
   align-items: center;
   width: 100vw;
   height: 100vh;
-  background-color: #17191d;
+  background-color: #000000;
   color: #fff;
   font-family: var(--font-sans);
 }
 
 .auth-card {
-  background: #20242a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: none;
   border-radius: 12px;
   width: 380px;
   padding: 30px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
 }
@@ -595,9 +597,9 @@
 }
 
 .status-badge.online {
-  background: rgba(57, 255, 20, 0.1);
-  color: #39ff14;
-  border: 1px solid rgba(57, 255, 20, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .status-badge.offline {
@@ -645,12 +647,14 @@
 }
 
 .modal-card {
-  background: #20242a;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: none;
   border-radius: 12px;
   width: 420px;
   padding: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
 }
