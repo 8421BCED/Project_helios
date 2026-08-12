@@ -71,6 +71,7 @@ export default function CesiumGlobe({
   const prevSelectedIdRef = useRef(null); // Keep track of previous selection to revert styles
   const satellitesRef = useRef([]); // Ref to avoid stale closures in selection Hook
   const selectedSatelliteRef = useRef(null); // Ref to avoid stale closures and linter dependency warnings
+  const activeCloudsRef = useRef([]); // Reference to hold moving volumetric cloud items
   const [isViewerReady, setIsViewerReady] = useState(false);
 
   // Keep refs updated
@@ -173,6 +174,35 @@ export default function CesiumGlobe({
         viewer.creditContainer.style.display = 'none';
       }
 
+      // Instantiate volumetric 3D clouds
+      const cloudCollection = viewer.scene.primitives.add(new Cesium.CloudCollection());
+      const tempClouds = [];
+      // Spawn 60 procedural moving clouds around the globe
+      for (let i = 0; i < 60; i++) {
+        const lat = (Math.random() * 140) - 70; // Keep clouds within visible latitudes
+        const lon = (Math.random() * 360) - 180;
+        const height = 4000 + Math.random() * 5000; // 4km to 9km altitude
+
+        const scaleX = 150000 + Math.random() * 200000;
+        const scaleY = 60000 + Math.random() * 80000;
+
+        const cloud = cloudCollection.add({
+          position: Cesium.Cartesian3.fromDegrees(lon, lat, height),
+          scale: new Cesium.Cartesian2(scaleX, scaleY),
+          maximumSize: new Cesium.Cartesian3(scaleX * 1.5, scaleY * 1.5, scaleY),
+          slice: Math.random() * 0.5,
+          brightness: 0.8 + Math.random() * 0.2
+        });
+
+        // Set wind velocity drift values (radians per frame)
+        // Predominant west-to-east winds
+        const speedLon = (0.000002 + Math.random() * 0.000005);
+        const speedLat = (Math.random() * 0.000002 - 0.000001);
+
+        tempClouds.push({ cloud, speedLon, speedLat });
+      }
+      activeCloudsRef.current = tempClouds;
+
       viewerRef.current = viewer;
       setIsViewerReady(true);
     }
@@ -218,22 +248,46 @@ export default function CesiumGlobe({
     };
   }, [onSelectSatellite]);
 
-  // 3. Handle Auto-Rotation (Earth Spin) using preUpdate event
+  // 3. Handle Auto-Rotation (Earth Spin) and Cloud Drift using preUpdate event
   useEffect(() => {
     const viewer = viewerRef.current;
     if (!viewer || !isViewerReady) return;
 
     const Cesium = window.Cesium;
     
-    const rotateGlobe = () => {
+    const animateScene = () => {
+      // 1. Rotate the globe
       if (isSpinning) {
         viewer.camera.rotate(Cesium.Cartesian3.UNIT_Z, 0.0003);
       }
+
+      // 2. Animate volumetric clouds moving in real-time
+      const activeClouds = activeCloudsRef.current;
+      if (activeClouds && activeClouds.length > 0) {
+        for (let i = 0; i < activeClouds.length; i++) {
+          const item = activeClouds[i];
+          const cloud = item.cloud;
+
+          // Convert current ECEF position to Cartographic radians
+          const cartographic = Cesium.Cartographic.fromCartesian(cloud.position);
+
+          // Update position coordinate by drift speed
+          let newLon = cartographic.longitude + item.speedLon;
+          let newLat = cartographic.latitude + item.speedLat;
+
+          // Wrap longitude around bounds [-PI, PI]
+          if (newLon > Math.PI) newLon -= 2 * Math.PI;
+          if (newLon < -Math.PI) newLon += 2 * Math.PI;
+
+          // Re-assign position in-place
+          cloud.position = Cesium.Cartesian3.fromRadians(newLon, newLat, cartographic.height);
+        }
+      }
     };
 
-    viewer.scene.preUpdate.addEventListener(rotateGlobe);
+    viewer.scene.preUpdate.addEventListener(animateScene);
     return () => {
-      viewer.scene.preUpdate.removeEventListener(rotateGlobe);
+      viewer.scene.preUpdate.removeEventListener(animateScene);
     };
   }, [isSpinning, isViewerReady]);
 
