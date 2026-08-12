@@ -174,30 +174,33 @@ export default function CesiumGlobe({
         viewer.creditContainer.style.display = 'none';
       }
 
-      // Instantiate volumetric 3D clouds
-      const cloudCollection = viewer.scene.primitives.add(new Cesium.CloudCollection());
+      // Initialize moving clouds using a BillboardCollection of realistic, fluffy cloud textures
+      const billboardCollection = viewer.scene.primitives.add(new Cesium.BillboardCollection());
       const tempClouds = [];
+      const cloudImageUrl = 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Cloud_PNG_Image.png/640px-Cloud_PNG_Image.png';
+
       // Spawn 60 procedural moving clouds around the globe
       for (let i = 0; i < 60; i++) {
-        const lat = (Math.random() * 140) - 70; // Keep clouds within visible latitudes
+        const lat = (Math.random() * 140) - 70; // Avoid extreme poles
         const lon = (Math.random() * 360) - 180;
         const height = 4000 + Math.random() * 5000; // 4km to 9km altitude
 
-        const scaleX = 150000 + Math.random() * 200000;
-        const scaleY = 60000 + Math.random() * 80000;
+        const size = 150000 + Math.random() * 200000; // Physical size in meters
+        const aspect = 0.5 + Math.random() * 0.5;
 
-        const cloud = cloudCollection.add({
+        const cloud = billboardCollection.add({
           position: Cesium.Cartesian3.fromDegrees(lon, lat, height),
-          scale: new Cesium.Cartesian2(scaleX, scaleY),
-          maximumSize: new Cesium.Cartesian3(scaleX * 1.5, scaleY * 1.5, scaleY),
-          slice: Math.random() * 0.5,
-          brightness: 0.8 + Math.random() * 0.2
+          image: cloudImageUrl,
+          width: size,
+          height: size * aspect,
+          sizeInMeters: true, // Scale physically on the globe
+          rotation: Math.random() * Math.PI * 2, // Random rotation makes them look distinct
+          color: new Cesium.Color(1.0, 1.0, 1.0, 0.45) // Soft semi-transparency
         });
 
         // Set wind velocity drift values (radians per frame)
-        // Predominant west-to-east winds
-        const speedLon = (0.000002 + Math.random() * 0.000005);
-        const speedLat = (Math.random() * 0.000002 - 0.000001);
+        const speedLon = (0.000002 + Math.random() * 0.000004);
+        const speedLat = (Math.random() * 0.0000016 - 0.0000008);
 
         tempClouds.push({ cloud, speedLon, speedLat });
       }
