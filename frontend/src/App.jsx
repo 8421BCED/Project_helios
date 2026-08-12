@@ -17,32 +17,108 @@ import CesiumGlobe from './components/CesiumGlobe';
 import './App.css';
 
 export default function App() {
-  // 1. Telemetry and Selection States
+  // --- A. AUTHENTICATION & ROUTING STATES ---
+  const [loggedInUser, setLoggedInUser] = useState(() => {
+    const saved = localStorage.getItem('helios_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
+  const [authUsername, setAuthUsername] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authError, setAuthError] = useState('');
+
+  // Admin States
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
+    return sessionStorage.getItem('helios_admin_auth') === 'true';
+  });
+  const [adminUsers, setAdminUsers] = useState([]);
+  const [adminError, setAdminError] = useState('');
+  
+  // Admin User Modal CRUD States
+  const [isCrudModalOpen, setIsCrudModalOpen] = useState(false);
+  const [crudMode, setCrudMode] = useState('create'); // 'create' | 'edit'
+  const [crudUserId, setCrudUserId] = useState(null);
+  const [crudUsername, setCrudUsername] = useState('');
+  const [crudEmail, setCrudEmail] = useState('');
+  const [crudPassword, setCrudPassword] = useState('');
+  const [crudError, setCrudError] = useState('');
+
+  // --- B. CORE DASHBOARD STATES ---
   const [selectedGroup, setSelectedGroup] = useState('stations');
   const [satellites, setSatellites] = useState([]);
   const [selectedSatellite, setSelectedSatellite] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // 2. Control Flags
   const [isSpinning, setIsSpinning] = useState(true);
   const [showOrbits, setShowOrbits] = useState(true);
   const [isCameraLocked, setIsCameraLocked] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // 3. Coordinate-Dependent External States
   const [weather, setWeather] = useState(null);
   const [astronomy, setAstronomy] = useState(null);
   const [apod, setApod] = useState(null);
-  
-  // 4. Live Clock State
   const [utcTime, setUtcTime] = useState(new Date().toUTCString());
 
-  // Keep a ref to the selected satellite NORAD ID to survive state updates during the setInterval loop
   const selectedNoradIdRef = useRef(null);
   const lastFetchedCoordsRef = useRef({ lat: null, lon: null });
   const liveCoordsRef = useRef({ lat: null, lon: null });
 
-  // Update Live clock
+  // --- C. ROUTING ROUTER EMULATION ---
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    
+    const originalPushState = window.history.pushState;
+    window.history.pushState = function(...args) {
+      originalPushState.apply(this, args);
+      handleLocationChange();
+    };
+    
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.history.pushState = originalPushState;
+    };
+  }, []);
+
+  const navigateTo = (path) => {
+    window.history.pushState({}, '', path);
+  };
+
+  // --- D. HEARTBEAT INTERVAL (Updates online status and time spent) ---
+  useEffect(() => {
+    if (!loggedInUser) return;
+
+    // Send initial ping
+    const sendPing = () => {
+      fetch('http://localhost:8080/api/auth/ping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: loggedInUser.username, deltaSeconds: 10 })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Ping failed");
+        return res.json();
+      })
+      .then(updatedUser => {
+        // Keep localized state in sync with duration
+        const merged = { ...loggedInUser, ...updatedUser };
+        localStorage.setItem('helios_user', JSON.stringify(merged));
+      })
+      .catch(err => console.error("Heartbeat sync error:", err));
+    };
+
+    sendPing();
+    const interval = setInterval(sendPing, 10000); // Heartbeat ping every 10 seconds
+    return () => clearInterval(interval);
+  }, [loggedInUser]);
+
+  // Live UTC Clock
   useEffect(() => {
     const timer = setInterval(() => {
       setUtcTime(new Date().toUTCString());
@@ -58,15 +134,16 @@ export default function App() {
       .catch(err => console.error("Error fetching APOD:", err));
   }, []);
 
-  // Periodic Telemetry Loop - updates satellite coordinates every 2.5 seconds
+  // Fetch Satellite Telemetry Loop
   useEffect(() => {
+    if (!loggedInUser || currentPath === '/admin') return;
+
     const fetchSatellites = () => {
       fetch(`http://localhost:8080/api/satellites/${selectedGroup}`)
         .then(res => res.json())
         .then(data => {
           setSatellites(data);
           
-          // Re-align the selected satellite reference with the fresh coordinates from backend
           if (selectedNoradIdRef.current) {
             const fresh = data.find(s => s.noradId === selectedNoradIdRef.current);
             if (fresh) {
@@ -80,45 +157,39 @@ export default function App() {
 
     fetchSatellites();
     const interval = setInterval(fetchSatellites, 2500);
-
     return () => clearInterval(interval);
-  }, [selectedGroup]);
+  }, [selectedGroup, loggedInUser, currentPath]);
 
-  // Weather & Astronomy fetcher with coordinate-movement threshold caching
+  // Fetch Weather & Astronomy when position moves significantly
   const fetchLocationMetadata = (lat, lon, force = false) => {
     if (lat === null || lon === null) return;
 
-    // Only query weather/astronomy if moved more than 2.0 degrees (approx 220km) to avoid rate limits / IP ban
     if (!force && lastFetchedCoordsRef.current.lat !== null) {
       const dLat = Math.abs(lat - lastFetchedCoordsRef.current.lat);
       const dLon = Math.abs(lon - lastFetchedCoordsRef.current.lon);
       if (dLat < 2.0 && dLon < 2.0) {
-        return; // Skip API request to save IP rate limits
+        return; 
       }
     }
 
     lastFetchedCoordsRef.current = { lat, lon };
 
-    // 1. Weather
     fetch(`http://localhost:8080/api/weather?lat=${lat}&lon=${lon}`)
       .then(res => res.json())
       .then(data => setWeather(data))
       .catch(err => console.error("Error fetching weather:", err));
 
-    // 2. Astronomy
     fetch(`http://localhost:8080/api/astronomy?coords=${lat},${lon}`)
       .then(res => res.json())
       .then(data => setAstronomy(data))
       .catch(err => console.error("Error fetching astronomy:", err));
   };
 
-  // Handle selection updates
   const handleSelectSatellite = (sat) => {
     if (sat) {
       selectedNoradIdRef.current = sat.noradId;
       setSelectedSatellite(sat);
       liveCoordsRef.current = { lat: sat.latitude, lon: sat.longitude };
-      // Instantly load weather and astronomy for new coordinates (force fetch)
       fetchLocationMetadata(sat.latitude, sat.longitude, true);
     } else {
       selectedNoradIdRef.current = null;
@@ -130,7 +201,6 @@ export default function App() {
     }
   };
 
-  // Fetch updates for weather/astronomy on a slower background interval when satellite moves
   useEffect(() => {
     if (!selectedNoradIdRef.current) return;
 
@@ -144,15 +214,11 @@ export default function App() {
     return () => clearInterval(interval);
   }, [selectedSatellite?.noradId]);
 
-  // Sync TLE local cache manually
   const handleRefreshCache = () => {
     setIsRefreshing(true);
     fetch('http://localhost:8080/api/satellites/refresh', { method: 'POST' })
       .then(res => res.json())
-      .then(() => {
-        // Fetch current group again immediately
-        return fetch(`http://localhost:8080/api/satellites/${selectedGroup}`);
-      })
+      .then(() => fetch(`http://localhost:8080/api/satellites/${selectedGroup}`))
       .then(res => res.json())
       .then(data => {
         setSatellites(data);
@@ -164,12 +230,420 @@ export default function App() {
       });
   };
 
+  // --- E. AUTH CONTROLLER LOGIC ---
+  const handleAuthSubmit = (e) => {
+    e.preventDefault();
+    setAuthError('');
+
+    if (authMode === 'login') {
+      fetch('http://localhost:8080/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: authUsername, password: authPassword })
+      })
+      .then(async res => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Login failed");
+        return data;
+      })
+      .then(user => {
+        localStorage.setItem('helios_user', JSON.stringify(user));
+        setLoggedInUser(user);
+        setAuthUsername('');
+        setAuthPassword('');
+      })
+      .catch(err => setAuthError(err.message));
+    } else {
+      fetch('http://localhost:8080/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: authUsername, email: authEmail, password: authPassword })
+      })
+      .then(async res => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Registration failed");
+        return data;
+      })
+      .then(user => {
+        // Log in immediately after successful signup
+        localStorage.setItem('helios_user', JSON.stringify(user));
+        setLoggedInUser(user);
+        setAuthUsername('');
+        setAuthEmail('');
+        setAuthPassword('');
+      })
+      .catch(err => setAuthError(err.message));
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('helios_user');
+    setLoggedInUser(null);
+    handleSelectSatellite(null);
+  };
+
+  // --- F. ADMIN CONTROLLER LOGIC (CRUD) ---
+  const handleAdminVerify = (e) => {
+    e.preventDefault();
+    setAdminError('');
+    if (adminPasswordInput === 'sweet') {
+      setIsAdminAuthenticated(true);
+      sessionStorage.setItem('helios_admin_auth', 'true');
+      setAdminPasswordInput('');
+      fetchAdminUsers();
+    } else {
+      setAdminError('Invalid admin console credentials.');
+    }
+  };
+
+  const fetchAdminUsers = () => {
+    fetch('http://localhost:8080/api/admin/users', {
+      headers: { 'X-Admin-Password': 'sweet' }
+    })
+    .then(res => {
+      if (!res.ok) throw new Error("Failed to load user list");
+      return res.json();
+    })
+    .then(data => setAdminUsers(data))
+    .catch(err => setAdminError(err.message));
+  };
+
+  useEffect(() => {
+    if (currentPath === '/admin' && isAdminAuthenticated) {
+      fetchAdminUsers();
+      // Periodically refresh list to see online status changes
+      const interval = setInterval(fetchAdminUsers, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [currentPath, isAdminAuthenticated]);
+
+  const handleAdminLogout = () => {
+    setIsAdminAuthenticated(false);
+    sessionStorage.removeItem('helios_admin_auth');
+    navigateTo('/');
+  };
+
+  // CRUD Actions
+  const handleOpenCreateModal = () => {
+    setCrudMode('create');
+    setCrudUsername('');
+    setCrudEmail('');
+    setCrudPassword('');
+    setCrudError('');
+    setIsCrudModalOpen(true);
+  };
+
+  const handleOpenEditModal = (user) => {
+    setCrudMode('edit');
+    setCrudUserId(user.id);
+    setCrudUsername(user.username);
+    setCrudEmail(user.email);
+    setCrudPassword(user.password);
+    setCrudError('');
+    setIsCrudModalOpen(true);
+  };
+
+  const handleCrudSubmit = (e) => {
+    e.preventDefault();
+    setCrudError('');
+
+    const url = crudMode === 'create' 
+      ? 'http://localhost:8080/api/admin/users'
+      : `http://localhost:8080/api/admin/users/${crudUserId}`;
+    
+    const method = crudMode === 'create' ? 'POST' : 'PUT';
+
+    fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Password': 'sweet'
+      },
+      body: JSON.stringify({
+        username: crudUsername,
+        email: crudEmail,
+        password: crudPassword
+      })
+    })
+    .then(async res => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "CRUD Action failed");
+      return data;
+    })
+    .then(() => {
+      setIsCrudModalOpen(false);
+      fetchAdminUsers();
+    })
+    .catch(err => setCrudError(err.message));
+  };
+
+  const handleDeleteUser = (id) => {
+    if (!window.confirm("Are you sure you want to remove this user from the system database?")) return;
+
+    fetch(`http://localhost:8080/api/admin/users/${id}`, {
+      method: 'DELETE',
+      headers: { 'X-Admin-Password': 'sweet' }
+    })
+    .then(async res => {
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Delete failed");
+      }
+    })
+    .then(() => fetchAdminUsers())
+    .catch(err => setAdminError(err.message));
+  };
+
+  // Helper to format total duration
+  const formatTimeSpent = (seconds) => {
+    if (!seconds) return '0s';
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    let result = '';
+    if (hrs > 0) result += `${hrs}h `;
+    if (mins > 0) result += `${mins}m `;
+    result += `${secs}s`;
+    return result;
+  };
+
+  // Helper to check if a user is online (lastActive within 25 seconds)
+  const isUserOnline = (lastActive) => {
+    if (!lastActive) return false;
+    return (Date.now() - lastActive) < 25000;
+  };
+
   // Filter list by search query
   const filteredSatellites = satellites.filter(s => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     s.noradId.toString().includes(searchQuery)
   );
 
+  // --- G. RENDER CONTROLS ---
+
+  // 1. ADMIN VIEW SCREEN
+  if (currentPath === '/admin') {
+    if (!isAdminAuthenticated) {
+      return (
+        <div className="auth-page-container">
+          <div className="auth-card">
+            <h1 className="auth-title">ADMIN GATEWAY</h1>
+            <p className="auth-subtitle">Verify password credentials to access control dashboard.</p>
+            {adminError && <div className="auth-error">{adminError}</div>}
+            <form onSubmit={handleAdminVerify}>
+              <div className="auth-form-group">
+                <label>Admin Password</label>
+                <input 
+                  type="password" 
+                  className="auth-input"
+                  required
+                  placeholder="Enter Password..."
+                  value={adminPasswordInput}
+                  onChange={(e) => setAdminPasswordInput(e.target.value)}
+                />
+              </div>
+              <button type="submit" className="auth-btn" style={{ width: '100%' }}>Verify Admin</button>
+            </form>
+            <div className="auth-toggle-text">
+              <span className="auth-toggle-link" onClick={() => navigateTo('/')}>← Return to Portal</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="admin-container">
+        <header className="admin-header">
+          <div className="admin-title-sec">
+            <h1>HELIOS ADMIN CONSOLE</h1>
+            <p>Database Management Portal (Active SQL CRUD Interface)</p>
+          </div>
+          <div className="admin-actions">
+            <button className="btn-cyber" onClick={handleOpenCreateModal}>+ Register New User</button>
+            <button className="btn-cyber" onClick={() => navigateTo('/')}>Back to Globe</button>
+            <button className="btn-profile-logout" onClick={handleAdminLogout}>Exit Console</button>
+          </div>
+        </header>
+
+        {adminError && <div className="auth-error" style={{ marginBottom: '20px' }}>{adminError}</div>}
+
+        <div className="admin-table-container">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email Address</th>
+                <th>System Status</th>
+                <th>Total Session Duration</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {adminUsers.map(user => (
+                <tr key={user.id}>
+                  <td>#{user.id}</td>
+                  <td style={{ fontWeight: 600 }}>{user.username}</td>
+                  <td>{user.email}</td>
+                  <td>
+                    {isUserOnline(user.lastActive) ? (
+                      <span className="status-badge online">● Online</span>
+                    ) : (
+                      <span className="status-badge offline">Offline</span>
+                    )}
+                  </td>
+                  <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{formatTimeSpent(user.totalTimeSpentSeconds)}</td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="btn-crud edit" onClick={() => handleOpenEditModal(user)}>Edit</button>
+                      <button className="btn-crud delete" onClick={() => handleDeleteUser(user.id)}>Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {adminUsers.length === 0 && (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-secondary)' }}>
+                    No registered accounts found in the database.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Modal CRUD Popup Dialog */}
+        {isCrudModalOpen && (
+          <div className="modal-overlay">
+            <div className="modal-card">
+              <div className="modal-header">
+                {crudMode === 'create' ? 'Register Database User' : 'Update User Credentials'}
+              </div>
+              {crudError && <div className="auth-error">{crudError}</div>}
+              <form onSubmit={handleCrudSubmit}>
+                <div className="auth-form-group">
+                  <label>Username</label>
+                  <input 
+                    type="text" 
+                    className="auth-input" 
+                    required 
+                    value={crudUsername}
+                    onChange={(e) => setCrudUsername(e.target.value)}
+                  />
+                </div>
+                <div className="auth-form-group">
+                  <label>Email Address</label>
+                  <input 
+                    type="email" 
+                    className="auth-input" 
+                    required 
+                    value={crudEmail}
+                    onChange={(e) => setCrudEmail(e.target.value)}
+                  />
+                </div>
+                <div className="auth-form-group">
+                  <label>Password</label>
+                  <input 
+                    type="password" 
+                    className="auth-input" 
+                    required={crudMode === 'create'}
+                    placeholder={crudMode === 'edit' ? 'Enter new password if updating...' : ''}
+                    value={crudPassword}
+                    onChange={(e) => setCrudPassword(e.target.value)}
+                  />
+                </div>
+                <div className="modal-actions">
+                  <button type="button" className="btn-cyber" onClick={() => setIsCrudModalOpen(false)}>Cancel</button>
+                  <button type="submit" className="auth-btn">Save Changes</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 2. USER AUTHENTICATION SCREEN (LOGIN / SIGNUP)
+  if (!loggedInUser) {
+    return (
+      <div className="auth-page-container">
+        <div className="auth-card">
+          <h1 className="auth-title">HELIOS SATELLITE PORTAL</h1>
+          <p className="auth-subtitle">
+            {authMode === 'login' 
+              ? 'Welcome back. Sign in to your account.' 
+              : 'Register credentials to join orbital telemetry access.'}
+          </p>
+
+          {authError && <div className="auth-error">{authError}</div>}
+
+          <form onSubmit={handleAuthSubmit}>
+            <div className="auth-form-group">
+              <label>Username</label>
+              <input 
+                type="text" 
+                className="auth-input"
+                required
+                value={authUsername}
+                onChange={(e) => setAuthUsername(e.target.value)}
+                placeholder="Enter Username"
+              />
+            </div>
+
+            {authMode === 'signup' && (
+              <div className="auth-form-group">
+                <label>Email Address</label>
+                <input 
+                  type="email" 
+                  className="auth-input"
+                  required
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  placeholder="name@domain.com"
+                />
+              </div>
+            )}
+
+            <div className="auth-form-group">
+              <label>Password</label>
+              <input 
+                type="password" 
+                className="auth-input"
+                required
+                value={authPassword}
+                onChange={(e) => setAuthPassword(e.target.value)}
+                placeholder="Enter Password"
+              />
+            </div>
+
+            <button type="submit" className="auth-btn" style={{ width: '100%' }}>
+              {authMode === 'login' ? 'Sign In' : 'Sign Up'}
+            </button>
+          </form>
+
+          <div className="auth-toggle-text">
+            {authMode === 'login' ? (
+              <>
+                Don't have an account? 
+                <span className="auth-toggle-link" onClick={() => setAuthMode('signup')}>Sign Up</span>
+              </>
+            ) : (
+              <>
+                Already have an account? 
+                <span className="auth-toggle-link" onClick={() => setAuthMode('login')}>Sign In</span>
+              </>
+            )}
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // 3. MAIN SATELLITE GLOBE DASHBOARD
   return (
     <div className="app-container">
       {/* 3D Earth Canvas */}
@@ -187,7 +661,15 @@ export default function App() {
           <Globe className="logo-icon animate-spin" size={22} style={{ animationDuration: '20s' }} />
           <h1>Project Helios</h1>
           <span>V1.0</span>
+          
+          {/* User Session Profile display */}
+          <div className="header-profile-section">
+            <span className="text-secondary" style={{ fontSize: '12px' }}>User:</span>
+            <span className="profile-username" style={{ fontSize: '13px', color: 'var(--neon-blue)' }}>{loggedInUser.username}</span>
+            <button className="btn-profile-logout" onClick={handleLogout}>Logout</button>
+          </div>
         </div>
+        
         <div className="header-stats">
           <div className="stat-item">
             <Activity className="text-secondary" size={14} />
