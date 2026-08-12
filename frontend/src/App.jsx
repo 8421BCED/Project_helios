@@ -550,7 +550,9 @@ export default function App() {
               <button type="submit" className="auth-btn" style={{ width: '100%' }}>Verify Admin</button>
             </form>
             <div className="auth-toggle-text">
-              <span className="auth-toggle-link" onClick={() => navigateTo('/')}>← Return to Portal</span>
+              <a href="/" className="auth-toggle-link" onClick={(e) => { e.preventDefault(); navigateTo('/'); }} style={{ textDecoration: 'none' }}>
+                ← Return to Portal
+              </a>
             </div>
           </div>
         </div>
@@ -566,8 +568,12 @@ export default function App() {
           </div>
           <div className="admin-actions">
             <button className="btn-cyber" onClick={handleOpenCreateModal}>+ Register New User</button>
-            <button className="btn-cyber" onClick={() => navigateTo('/')}>Back to Globe</button>
-            <button className="btn-profile-logout" onClick={handleAdminLogout}>Exit Console</button>
+            <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('/'); }} style={{ textDecoration: 'none' }}>
+              <button className="btn-cyber">Back to Globe</button>
+            </a>
+            <a href="/" onClick={(e) => { e.preventDefault(); handleAdminLogout(); }} style={{ textDecoration: 'none' }}>
+              <button className="btn-profile-logout">Exit Console</button>
+            </a>
           </div>
         </header>
 
@@ -753,6 +759,12 @@ export default function App() {
             )}
           </div>
 
+          <div className="auth-toggle-text" style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            <a href="/admin" className="auth-toggle-link" onClick={(e) => { e.preventDefault(); navigateTo('/admin'); }} style={{ color: 'var(--neon-blue)', textDecoration: 'none' }}>
+              Access Administrative Gateway →
+            </a>
+          </div>
+
         </div>
       </div>
     );
@@ -780,7 +792,10 @@ export default function App() {
           {/* User Session Profile display */}
           <div className="header-profile-section">
             <span className="text-secondary" style={{ fontSize: '12px' }}>User:</span>
-            <span className="profile-username" style={{ fontSize: '13px', color: 'var(--neon-blue)' }}>{loggedInUser.username}</span>
+            <span className="profile-username" style={{ fontSize: '13px', color: 'var(--neon-blue)', marginRight: '12px' }}>{loggedInUser.username}</span>
+            <a href="/admin" onClick={(e) => { e.preventDefault(); navigateTo('/admin'); }} style={{ color: 'var(--neon-blue)', marginRight: '15px', fontSize: '12px', textDecoration: 'none', fontWeight: 500 }} className="auth-toggle-link">
+              Admin Console
+            </a>
             <button className="btn-profile-logout" onClick={handleLogout}>Logout</button>
           </div>
         </div>
