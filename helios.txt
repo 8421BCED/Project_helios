@@ -1,0 +1,161 @@
+ABSTRACT
+The Helios Satellite Dashboard is a full-stack telemetry and orbital tracking web application built to visualize satellites and calculate their paths in real-time. Developed using React.js and CesiumJS for an interactive 3D geospatial interface, and Spring Boot for a robust backend architecture, the system provides real-time orbital calculations. A relational MySQL database handles data persistence, storing user login credentials, configuration preferences, and registered satellite data via Spring Data JPA.
+The system implements comprehensive CRUD (Create, Read, Update, Delete) capabilities for satellite records, computes orbital tracks using SGP4 propagation models, and integrates dynamic sub-satellite telemetry (weather and astronomical rise/set parameters). Refactored drawing loops utilize lightweight CallbackProperty and in-place updates to eliminate rendering flickering and visual drift. Client-side and server-side validation layers ensure operational stability, while coordinate-delta caching mitigates external API rate-limiting.
+By replacing static satellite trackers with a fluid, high-fidelity 3D rendering environment, the dashboard provides a modern mission-control dashboard for space telemetry tracking.
+
+Background
+INTRODUCTION
+The Helios Satellite Dashboard is a full-stack web application designed to track, propagate, and visualize satellites in Earth's orbit in real-time. Built on React.js for the dynamic front-end telemetry and Spring Boot for the Java service layer, the application delivers a centralized space monitoring dashboard. By incorporating a MySQL database, the platform allows users to manage satellite registers, save session settings, and authorize administrative profiles securely. The primary purpose of this project is to provide a smooth, scientifically accurate 3D dashboard that simplifies complex space telemetry, visualizes orbits, and displays weather/celestial data for sub-satellite points.
+Through a responsive interface, users can select satellites, inspect orbital paths, and monitor dynamic ground conditions. The Spring Boot backend processes SGP4 mathematical calculations, ensuring orbital path accuracy. By replacing static offline trackers with a high-fidelity WebGL globe, the project delivers a streamlined space-monitoring solution.
+In satellite monitoring, calculating real-time coordinates requires handling complex celestial mechanics. Traditionally, orbital telemetry tools were heavy desktop clients or static 2D maps. These tools suffered from lack of real-time coordinate updates, high mathematical overhead for browsers, and no integration with local weather or environmental conditions.
+This project was initiated to build an interactive WebGL portal. By combining React, CesiumJS, and Spring Boot, the Helios Satellite Dashboard makes orbital telemetry accessible, providing a smooth, 60fps mission-control environment.
+
+PROBLEM STATEMENT
+In orbital tracking and telemetry monitoring, developers and operators face several high-level synchronization and rendering challenges:
+• Lack of Real-Time 3D Visualization: Static 2D maps fail to accurately represent orbital inclinations, altitudes, and altitudes relative to Earth's curvature.
+• Rendering Flickering: Re-creating entities or polylines on every coordinate update causes visual blinking, degrading the presentation quality.
+• API Rate Limiting: Querying external weather and astronomy APIs for sub-satellite coordinates on every tick quickly exceeds rate limits, leading to IP bans.
+• Camera Lock and Sticking: Locking the camera directly onto a satellite freezes the satellite in the center of the screen, creating the illusion that it is glued in place.
+• Complex Coordinate Drift: Earth's rotation shifts the ground track underneath a satellite. Without real-time path updates, satellites drift away from their drawn paths.
+
+OBJECTIVES
+The primary objective of the Helios Satellite Dashboard is to deploy a full-stack tracking application that solves rendering glitches and API limits. The specific objectives are:
+1. Develop an Interactive 3D Globe: Build a high-end interface using React.js and CesiumJS to render the Earth, atmosphere, stars, and satellites.
+2. Implement SGP4 Propagation: Use Spring Boot and predict4java to compute satellite positions and ground tracks dynamically from TLE data.
+3. Ensure Data Persistence: Connect a MySQL database using Spring Data JPA to manage user accounts and registered satellites.
+4. Eliminate Visual Flickering: Refactor the rendering lifecycle to use CallbackProperty and in-place coordinate updates, preventing entity recreation.
+5. Prevent API Rate Limiting: Implement coordinate-delta cache thresholds (2.0 degrees / 220km) to restrict external API queries.
+6. Enable Independent Motion: Remove continuous camera tracking, letting the Earth spin on its axis while satellites orbit freely.
+7. Integrate Environmental Telemetry: Bind sub-satellite coordinates to live weather and astronomical rise/set parameters.
+8. Establish Modular Architecture: Structure controllers, service layers, and React hooks independently for high maintainability.
+
+TECHNOLOGY STACK
+Component                | Technology Used
+-------------------------|---------------------------------------------
+Frontend                 | React.js, CesiumJS, Vanilla CSS
+Backend                  | Spring Boot (Java), predict4java
+API                      | REST API (JSON)
+Database                 | MySQL
+Programming Language     | Java (Backend) / JavaScript (Frontend)
+IDE                      | VS Code / IntelliJ IDEA
+API Testing              | Postman / Curl
+Version Control          | Git & GitHub
+
+MODULES
+The Helios Satellite Dashboard consists of five core functional modules:
+• 1. User Authentication Module: Manages user registration, login, and sessions (using SQL) to restrict administrative controls.
+• 2. Orbit Propagation Module: Calculates satellite coordinates and 45-point ground tracks in real-time from TLE logs.
+• 3. Cesium 3D Globe Module: Renders the WebGL globe, 3D models (ISS Zarya), neon point states, and glowing orbit polylines.
+• 4. Weather & Astronomy Module: Fetches meteorological and celestial data at sub-satellite coordinates.
+• 5. Caching & Performance Module: Coordinates delta checks, in-place polyline updates, and CallbackProperty rendering to ensure 60fps.
+
+SYSTEM ARCHITECTURE
+The Helios Satellite Dashboard follows a standard 3-Tier Architecture for scalability:
+• 1. Presentation Layer (Frontend - React.js + Cesium): Single-page app (SPA) that renders the map HUD, visualizes orbits, and sends JSON requests via Axios.
+• 2. Application Layer (Backend - Spring Boot): Processes the business logic across three sub-layers:
+  o Controller Layer: Exposes REST API endpoints (/api/satellites, /api/weather, /api/auth) to handle requests.
+  o Service Layer: Executes SGP4 calculations, caching rules, and calls weather APIs.
+  o Repository Layer: Fetches and saves satellite configurations and user logins to MySQL.
+• 3. Database Layer (MySQL): Stores user credentials, session configurations, and satellite registers.
+
+FRONTEND DEVELOPMENT
+Technology: React.js & CesiumJS
+Pages Developed: 3
+Components: 5
+
+S.No | Page Name              | Purpose
+-----|------------------------|----------------------------------------
+1    | Login / Register Page  | Authenticates users and manages sessions via MySQL database.
+2    | Roster / Dashboard     | Displays the satellite list, search, and active telemetry stats.
+3    | Globe View             | Interactive 3D map rendering satellites, orbits, and ground tracks.
+
+S.No | Component Name         | Purpose
+-----|------------------------|----------------------------------------
+1    | CesiumGlobe            | Renders WebGL scene, 3D ISS model, polylines, and handles clicks.
+2    | SatelliteRoster        | Lists active satellites with status indicators and search.
+3    | TelemetryPanel         | Displays current latitude, longitude, altitude, weather, and astronomy.
+4    | Header                 | Top navigation bar containing theme controls and session logouts.
+5    | AuthForm               | Form components capturing credentials for database authentication.
+
+BACKEND DEVELOPMENT
+Technology: Spring Boot
+Backend Layers: Entity, Controller, Service, Repository
+Backend Components: 9
+
+Component   | Name
+------------|---------------------------------------------------------
+Entity      | Satellite.java, User.java, SatelliteData.java
+Controller  | SatelliteController.java, WeatherController.java, AuthController.java
+Service     | SatellitePropagatorService.java, WeatherService.java, UserService.java
+Repository  | SatelliteRepository.java, UserRepository.java
+
+REST API DETAILS
+S.No | HTTP Method | Endpoint                       | Purpose
+-----|-------------|--------------------------------|-----------------------------------------
+1    | GET         | /api/satellites                | Fetches list of all active satellites.
+2    | GET         | /api/satellites/{id}           | Fetches telemetry and ground track points.
+3    | GET         | /api/weather?lat={y}&lon={x}   | Fetches weather at coordinates.
+4    | GET         | /api/astronomy?lat={y}&lon={x} | Fetches rise/set times at coordinates.
+5    | POST        | /api/auth/login                | Authenticates user logins via MySQL.
+6    | POST        | /api/auth/register             | Creates a user account in the database.
+
+FRONTEND–BACKEND INTEGRATION
+The Helios Dashboard links the React.js frontend and Spring Boot backend via asynchronous REST APIs:
+• REST Requests: React sends HTTP requests (GET, POST) using Axios to API endpoints.
+• Backend Processing: Spring Boot controllers map the requests, call services (SGP4 / NOAA), and fetch credentials from MySQL.
+• JSON Response: The backend returns structured JSON containing current telemetry, tracks, or weather data.
+• UI Updates: React updates state hooks (useState/useEffect) and caches positions, updating the HUD.
+• CORS Configuration: Spring Boot uses global @CrossOrigin settings to allow API queries from the React client domain.
+
+VALIDATION AND ERROR HANDLING
+The system implements validation and error management across frontend and backend:
+Field         | Validation Rule
+--------------|-------------------------------------------------------
+Satellite TLE | Must contain valid Line 1 and Line 2 formatting.
+NORAD ID      | Must be numeric, positive, and 5 digits in length.
+Coordinates   | Latitude must be [-90, 90], Longitude must be [-180, 180].
+
+• Backend Centralized Handling: Uses `@ControllerAdvice` to catch propagation, database, and connection errors.
+• Standard HTTP Responses: Returns structured JSON objects containing status codes (e.g. 400 Bad Request, 404 Not Found), timestamps, and messages.
+• Client-Side Feedback: Displays error modals or toast alerts in React, allowing the app to run without crashing during connection drops.
+
+VALIDATION AND ERROR HANDLING SCREENSHOTS
+Two screenshots demonstrating error handling during execution:
+1. Form Field Validation (Client-Side):
+   • Capture: A screenshot of the Satellite Input/Login forms when submitting invalid or empty TLE strings, showing validation errors.
+2. REST API Error Response (Server-Side / Postman):
+   • Capture: Postman output of a GET query to /api/satellites/99999, returning a structured JSON error object (404 Not Found) from the backend.
+
+CHALLENGES FACED
+• Visual Flickering: Re-creating entities on updates caused flickering. Resolved by using a persistent CallbackProperty for interpolation.
+• Camera Sticking: viewer.trackedEntity locked the camera, locking the satellite in place. Resolved by replacing continuous tracking with flyTo.
+• API Rate Limiting: Spamming weather APIs at sub-satellite points led to IP bans. Resolved by caching coordinates and checking a 2.0-degree delta threshold.
+• Coordinate Drift: Earth's rotation shifted ground tracks. Resolved by updating the polyline coordinates in-place dynamically.
+• Secret Exposure: Personal tokens and API keys were flagged by Git. Resolved by using application-local.yml and ignoring secrets via .gitignore.
+
+PROJECT OUTCOME
+The Helios Satellite Dashboard was successfully designed and deployed as a responsive full-stack telemetry viewer:
+• Functional Decoupled Integration: Linked a 3D WebGL frontend (React + Cesium) with a Spring Boot backend and MySQL.
+• Smooth Real-Time Rendering: Achieved 60fps coordinate interpolation and drift-free ground track drawing.
+• Secure Configuration Management: Safeguarded API keys and user credentials through profile-specific local configurations.
+• Adaptive Telemetry HUD: Rendered live weather and astronomy updates for sub-satellite coordinates without API throttling.
+
+CONCLUSION
+The Helios Satellite Dashboard was successfully built and tested as a decoupled full-stack tracking system.
+The system is built on a 3-tier architecture:
+• Frontend: Built with React.js and CesiumJS, leveraging a CallbackProperty for interpolation and Axios for REST queries.
+• Backend: Programmed in Spring Boot, handling SGP4 calculations and caching external weather/celestial data.
+• Database: Supported by MySQL, ensuring persistent storage for user credentials and satellite configurations.
+Key features implemented include SGP4 propagation, drift-free path rendering, 3D model overlays (ISS), HUD weather displays, and local profile configurations.
+The final result is a stable, 60fps tracking environment that provides real-time orbital tracking across all application layers.
+
+FUTURE ENHANCEMENTS
+• User Authentication (JWT): Integrate JSON Web Tokens to secure administrative controls and custom satellite tracking lists.
+• NASA FIRMS Overlay: Pull active thermal hotspots to visualize real-time forest fires on the globe.
+• 3D Cyclone Rendering: Fetch cyclone center coordinates and overlay rotating volumetric cloud meshes.
+
+REFERENCES
+• CesiumJS Documentation: Reference and Camera API Guides. Available at: https://cesium.com/learn/cesiumjs/ref/
+• predict4java: SGP4 Propagation Model Repository. Available at: https://github.com/hozn/predict4java
+• Spring Boot Reference Guide: Application Profiles and Properties. Available at: https://spring.io/projects/spring-boot
+• Axios API: Asynchronous HTTP request guides. Available at: https://axios-http.com/docs/intro
