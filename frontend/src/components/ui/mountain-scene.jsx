@@ -17,10 +17,13 @@ export function GenerativeMountainScene() {
     // SCENE SETUP
     const scene = new THREE.Scene();
     
+    const width = currentMount.clientWidth || window.innerWidth;
+    const height = currentMount.clientHeight || window.innerHeight;
+
     // Camera setup
     const camera = new THREE.PerspectiveCamera(
       75,
-      currentMount.clientWidth / currentMount.clientHeight,
+      width / height,
       0.1,
       100
     );
@@ -28,7 +31,7 @@ export function GenerativeMountainScene() {
     camera.rotation.x = -0.25;
 
     const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "high-performance" });
-    renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
+    renderer.setSize(width, height);
     renderer.setPixelRatio(1); // Limit pixel ratio to 1 for high performance
     currentMount.appendChild(renderer.domElement);
 
@@ -42,7 +45,7 @@ export function GenerativeMountainScene() {
       uniforms: {
         time: { value: 0 },
         pointLightPosition: { value: new THREE.Vector3(0, 0, 5) },
-        color: { value: new THREE.Color("#080808") }, // Sleek dark aesthetic
+        color: { value: new THREE.Color("#1e40af") }, // Professional dark blue
       },
       vertexShader: `
         uniform float time;
