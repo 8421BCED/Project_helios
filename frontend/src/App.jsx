@@ -14,6 +14,7 @@ import {
   Clock
 } from 'lucide-react';
 import CesiumGlobe from './components/CesiumGlobe';
+import GenerativeMountainScene from './components/ui/mountain-scene';
 import './App.css';
 
 export default function App() {
@@ -691,6 +692,7 @@ export default function App() {
   if (!loggedInUser) {
     return (
       <div className="auth-page-container">
+        <GenerativeMountainScene />
         <div className="auth-card">
           <h1 className="auth-title">HELIOS SATELLITE PORTAL</h1>
           <p className="auth-subtitle">
