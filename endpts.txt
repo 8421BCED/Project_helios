@@ -1,0 +1,124 @@
+================================================================================
+HELIOS ENVIRONMENTAL DASHBOARD - API ENDPOINTS DOCUMENTATION
+================================================================================
+
+Total Endpoints: 12
+
+--------------------------------------------------------------------------------
+1. AUTHENTICATION & SESSION ENDPOINTS (/api/auth)
+--------------------------------------------------------------------------------
+
+- POST /api/auth/register
+  - Description: Registers a new user account in the database.
+  - Request Body (JSON):
+    {
+      "username": "example_user",
+      "email": "user@example.com",
+      "password": "securepassword"
+    }
+  - Response: 200 OK with the created User object, or 400 Bad Request if username/email exists.
+
+- POST /api/auth/login
+  - Description: Validates credentials and logs the user in.
+  - Request Body (JSON):
+    {
+      "username": "example_user",
+      "password": "securepassword"
+    }
+  - Response: 200 OK with the authenticated User object, or 401 Unauthorized.
+
+- POST /api/auth/ping
+  - Description: Heartbeat endpoint to track active session time and update "Last Active" timestamp.
+  - Request Body (JSON):
+    {
+      "username": "example_user",
+      "deltaSeconds": 10
+    }
+  - Response: 200 OK with the updated User object, or 404 Not Found if user has been deleted.
+
+- POST /api/auth/interest
+  - Description: Telemetry endpoint to record user clicks on satellite categories (for user interest tracking).
+  - Request Body (JSON):
+    {
+      "username": "example_user",
+      "category": "weather"  // Values: stations, weather, starlink, gps
+    }
+  - Response: 200 OK with the updated User object, or 404 Not Found if user is missing.
+
+
+--------------------------------------------------------------------------------
+2. ADMINISTRATIVE ENDPOINTS (/api/admin)
+   Note: All admin endpoints require the "X-Admin-Password" header set to "sweet".
+--------------------------------------------------------------------------------
+
+- GET /api/admin/users
+  - Description: Retrieves a list of all users in the system, including click telemetry and primary interest analytics.
+  - Request Headers:
+    X-Admin-Password: sweet
+  - Response: 200 OK with a list of User objects.
+
+- POST /api/admin/users
+  - Description: Admin capability to register/create a new user.
+  - Request Headers:
+    X-Admin-Password: sweet
+  - Request Body (JSON):
+    {
+      "username": "new_user",
+      "email": "new_user@example.com",
+      "password": "password123"
+    }
+  - Response: 201 Created with the created User object, or 400 Bad Request.
+
+- PUT /api/admin/users/{id}
+  - Description: Admin capability to update credentials or email address of a specific user.
+  - Request Headers:
+    X-Admin-Password: sweet
+  - Request Body (JSON):
+    {
+      "username": "updated_username",
+      "email": "updated_email@example.com",
+      "password": "newpassword123"
+    }
+  - Response: 200 OK with the updated User object, or 400 Bad Request / 404 Not Found.
+
+- DELETE /api/admin/users/{id}
+  - Description: Admin capability to delete a user by ID.
+  - Request Headers:
+    X-Admin-Password: sweet
+  - Response: 200 OK with a success message, or 404 Not Found.
+
+
+--------------------------------------------------------------------------------
+3. SATELLITE TELEMETRY ENDPOINTS (/api/satellites)
+--------------------------------------------------------------------------------
+
+- GET /api/satellites/{group}
+  - Description: Retrieves calculated geodetic states (lat, lon, alt, velocity) for all active satellites in the given group.
+  - Path Variables:
+    group: "stations" | "weather" | "starlink" | "gps"
+  - Response: 200 OK with a list of propagated satellite coordinates.
+
+- POST /api/satellites/refresh
+  - Description: Manually triggers the backend to pull fresh TLE orbital elements from CelesTrak.
+  - Response: 200 OK with confirmation message.
+
+
+--------------------------------------------------------------------------------
+4. ENVIRONMENTAL & METEOROLOGICAL ENDPOINTS
+--------------------------------------------------------------------------------
+
+- GET /api/weather
+  - Description: Retrieves current weather coordinates data from Open-Meteo.
+  - Query Parameters:
+    lat: latitude coordinate (double, e.g. 40.7128)
+    lon: longitude coordinate (double, e.g. -74.0060)
+  - Response: 200 OK with local weather metrics.
+
+- GET /api/astronomy
+  - Description: Retrieves Sun and Moon rise, transit, and set times from the US Naval Observatory API.
+  - Query Parameters:
+    coords: "latitude,longitude" (string, e.g. "40.7128,-74.0060")
+    date: date string (optional, defaults to current date, e.g. "2026-08-13")
+    tz: timezone offset (optional, integer, e.g. "5.5")
+  - Response: 200 OK with celestial event timelines.
+================================================================================
