@@ -726,3 +726,138 @@
 .btn-go-admin:hover {
   background: rgba(0, 240, 255, 0.1);
 }
+
+/* Immersive Mode Transitions */
+.header-overlay,
+.left-sidebar,
+.right-sidebar,
+.bottom-overlay {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.6s ease, border-color 0.6s ease, box-shadow 0.6s ease;
+}
+
+.logo-section > *:not(.logo-icon),
+.header-stats {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.logo-icon.interactive-globe {
+  transition: transform 0.3s ease, filter 0.3s ease, color 0.3s ease;
+}
+
+.logo-icon.interactive-globe:hover {
+  transform: scale(1.2) rotate(15deg);
+  filter: drop-shadow(0 0 12px var(--neon-blue));
+}
+
+.logo-icon.interactive-globe.active {
+  animation: pulse-glow-globe 2.5s infinite alternate ease-in-out;
+  color: var(--neon-green) !important;
+}
+
+@keyframes pulse-glow-globe {
+  0% { transform: scale(1.15) rotate(0deg); filter: drop-shadow(0 0 4px var(--neon-green)); }
+  100% { transform: scale(1.3) rotate(360deg); filter: drop-shadow(0 0 16px var(--neon-green)); }
+}
+
+/* Immersive Mode States */
+.immersive-mode .left-sidebar {
+  transform: translateX(calc(-100% - 30px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.immersive-mode .right-sidebar {
+  transform: translateX(calc(100% + 30px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.immersive-mode .bottom-overlay {
+  transform: translateY(calc(100% + 30px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.immersive-mode .bottom-overlay.expanded {
+  transform: translateY(0) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.immersive-mode .header-overlay {
+  background: transparent;
+  border-bottom-color: transparent;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.immersive-mode .header-overlay .logo-section {
+  pointer-events: none;
+}
+
+.immersive-mode .header-overlay .logo-section .logo-icon {
+  pointer-events: auto; /* keeps the globe interactive! */
+}
+
+.immersive-mode .logo-section > *:not(.logo-icon) {
+  transform: translateY(-50px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.immersive-mode .header-stats {
+  transform: translateY(-50px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Space Intel Tab */
+.space-intel-tab {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(100%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid var(--border-glow);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  padding: 8px 20px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  pointer-events: none;
+  opacity: 0;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease, background 0.3s, bottom 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.space-intel-tab.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.space-intel-tab:hover {
+  background: rgba(0, 240, 255, 0.1);
+  border-color: var(--neon-blue);
+  box-shadow: 0 -2px 12px rgba(0, 240, 255, 0.2);
+}
+
+.space-intel-tab.expanded {
+  bottom: calc(180px + 30px); /* height of bottom overlay (180px) + margins (30px) */
+}
+
+.space-intel-tab .tab-arrow {
+  color: var(--neon-blue);
+  font-weight: 700;
+  transition: transform 0.3s;
+}
+
+.space-intel-tab.expanded .tab-arrow {
+  color: var(--neon-green);
+}

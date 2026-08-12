@@ -215,6 +215,156 @@ export default function CesiumGlobe({
       }
       activeCloudsRef.current = tempClouds;
 
+      // Real-Time Planets and Stars rendering
+      const baseTimeJulian = Cesium.JulianDate.fromDate(new Date("2026-08-13T00:00:00Z"));
+      const celestialBodies = [
+        {
+          name: "Moon",
+          radius: 1737400,
+          distance: 120000000,
+          period: 27.3 * 24 * 3600,
+          texture: 'https://upload.wikimedia.org/wikipedia/commons/7/78/Moon-merkator.jpg',
+          color: '#ffffff'
+        },
+        {
+          name: "Mars",
+          radius: 3389500,
+          distance: 220000000,
+          period: 687 * 24 * 3600,
+          texture: 'https://upload.wikimedia.org/wikipedia/commons/0/02/OSIRIS_Mars_true_color.jpg',
+          color: '#ff4500'
+        },
+        {
+          name: "Venus",
+          radius: 6051800,
+          distance: 320000000,
+          period: 224 * 24 * 3600,
+          texture: 'https://upload.wikimedia.org/wikipedia/commons/e/e5/Venus-real_color.jpg',
+          color: '#e2ca76'
+        },
+        {
+          name: "Jupiter",
+          radius: 15000000,
+          distance: 450000000,
+          period: 4333 * 24 * 3600,
+          texture: 'https://upload.wikimedia.org/wikipedia/commons/e/e1/Jupiter_by_Cassini-Huygens.jpg',
+          color: '#d4a373'
+        }
+      ];
+
+      celestialBodies.forEach(body => {
+        // Orbit path polyline
+        const orbitPoints = [];
+        for (let i = 0; i <= 100; i++) {
+          const angle = (i / 100) * Math.PI * 2;
+          orbitPoints.push(new Cesium.Cartesian3(
+            Math.cos(angle) * body.distance,
+            Math.sin(angle) * body.distance,
+            0
+          ));
+        }
+
+        viewer.entities.add({
+          name: `${body.name} Orbit`,
+          polyline: {
+            positions: orbitPoints,
+            width: 1.5,
+            material: new Cesium.PolylineDashMaterialProperty({
+              color: Cesium.Color.fromCssColorString(body.color).withAlpha(0.25),
+              dashLength: 8
+            })
+          }
+        });
+
+        // Dynamic ECI position callback property
+        const positionProperty = new Cesium.CallbackProperty((time, result) => {
+          const seconds = Cesium.JulianDate.secondsDifference(time, baseTimeJulian);
+          const angle = (seconds / body.period) * Math.PI * 2;
+          const eciPos = new Cesium.Cartesian3(
+            Math.cos(angle) * body.distance,
+            Math.sin(angle) * body.distance,
+            0
+          );
+          const matrix = Cesium.Transforms.computeIcrfToFixedMatrix(time);
+          if (Cesium.defined(matrix)) {
+            return Cesium.Matrix3.multiplyByVector(matrix, eciPos, result);
+          }
+          return eciPos;
+        }, false);
+
+        viewer.entities.add({
+          name: body.name,
+          position: positionProperty,
+          ellipsoid: {
+            radii: new Cesium.Cartesian3(body.radius, body.radius, body.radius),
+            material: new Cesium.ImageMaterialProperty({
+              image: body.texture
+            })
+          },
+          label: {
+            text: body.name.toUpperCase(),
+            font: '11px Share Tech Mono',
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            fillColor: Cesium.Color.WHITE,
+            outlineColor: Cesium.Color.BLACK,
+            outlineWidth: 2,
+            pixelOffset: new Cesium.Cartesian2(0, -(body.radius / 1000000 + 20)),
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER
+          }
+        });
+      });
+
+      // Named Stars in ECI frame
+      const starsData = [
+        { name: "Sirius (Alpha Canis Majoris)", ra: 6.75, dec: -16.72, color: '#8ad3ff' },
+        { name: "Polaris (North Star)", ra: 2.53, dec: 89.26, color: '#ffffff' },
+        { name: "Vega (Alpha Lyrae)", ra: 18.62, dec: 38.78, color: '#a3d8ff' },
+        { name: "Betelgeuse (Alpha Orionis)", ra: 5.92, dec: 7.41, color: '#ffb07c' },
+        { name: "Rigel (Beta Orionis)", ra: 5.25, dec: -8.20, color: '#8af0ff' },
+        { name: "Altair (Alpha Aquilae)", ra: 19.85, dec: 8.87, color: '#ffffff' },
+        { name: "Procyon (Alpha Canis Minoris)", ra: 7.66, dec: 5.22, color: '#fffae0' }
+      ];
+
+      const starDistance = 800000000;
+
+      starsData.forEach(star => {
+        const raRad = star.ra * (Math.PI / 12);
+        const decRad = star.dec * (Math.PI / 180);
+        const x = Math.cos(decRad) * Math.cos(raRad);
+        const y = Math.cos(decRad) * Math.sin(raRad);
+        const z = Math.sin(decRad);
+        const eciPos = new Cesium.Cartesian3(x * starDistance, y * starDistance, z * starDistance);
+
+        const positionProperty = new Cesium.CallbackProperty((time, result) => {
+          const matrix = Cesium.Transforms.computeIcrfToFixedMatrix(time);
+          if (Cesium.defined(matrix)) {
+            return Cesium.Matrix3.multiplyByVector(matrix, eciPos, result);
+          }
+          return eciPos;
+        }, false);
+
+        viewer.entities.add({
+          name: star.name,
+          position: positionProperty,
+          point: {
+            pixelSize: 6,
+            color: Cesium.Color.fromCssColorString(star.color),
+            outlineColor: Cesium.Color.WHITE.withAlpha(0.5),
+            outlineWidth: 1
+          },
+          label: {
+            text: star.name.toUpperCase(),
+            font: '10px Share Tech Mono',
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            fillColor: Cesium.Color.WHITE.withAlpha(0.7),
+            outlineColor: Cesium.Color.BLACK,
+            outlineWidth: 1.5,
+            pixelOffset: new Cesium.Cartesian2(0, -12),
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER
+          }
+        });
+      });
+
       viewerRef.current = viewer;
       setIsViewerReady(true);
     }

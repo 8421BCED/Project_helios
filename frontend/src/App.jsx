@@ -68,9 +68,27 @@ export default function App() {
   const [apod, setApod] = useState(null);
   const [utcTime, setUtcTime] = useState(new Date().toUTCString());
 
+  // Immersive Mode & Network Speed States
+  const [isImmersive, setIsImmersive] = useState(false);
+  const [isBottomExpanded, setIsBottomExpanded] = useState(false);
+  const [networkSpeed, setNetworkSpeed] = useState(30.0);
+
   const selectedNoradIdRef = useRef(null);
   const lastFetchedCoordsRef = useRef({ lat: null, lon: null });
   const liveCoordsRef = useRef({ lat: null, lon: null });
+
+  // Network speed simulator effect
+  useEffect(() => {
+    if (!loggedInUser) return;
+    const interval = setInterval(() => {
+      setNetworkSpeed(prev => {
+        const change = (Math.random() - 0.5) * 4;
+        const next = Math.max(15, Math.min(65, prev + change));
+        return parseFloat(next.toFixed(1));
+      });
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [loggedInUser]);
 
   // --- C. ROUTING ROUTER EMULATION ---
   useEffect(() => {
@@ -774,7 +792,7 @@ export default function App() {
 
   // 3. MAIN SATELLITE GLOBE DASHBOARD
   return (
-    <div className="app-container">
+    <div className={`app-container ${isImmersive ? 'immersive-mode' : ''}`}>
       {/* 3D Earth Canvas */}
       <CesiumGlobe 
         satellites={satellites}
@@ -787,7 +805,16 @@ export default function App() {
       {/* Top Banner Overlay */}
       <header className="header-overlay glass-panel">
         <div className="logo-section">
-          <Globe className="logo-icon animate-spin" size={22} style={{ animationDuration: '20s' }} />
+          <Globe 
+            className={`logo-icon interactive-globe ${isImmersive ? 'active' : 'animate-spin'}`} 
+            size={22} 
+            style={{ animationDuration: '20s', cursor: 'pointer', transition: 'all 0.3s ease' }} 
+            onClick={() => {
+              setIsImmersive(!isImmersive);
+              setIsBottomExpanded(false); // reset expanded drawer on toggle
+            }}
+            title={isImmersive ? "Exit Immersive Mode" : "Enter Immersive Mode"}
+          />
           <h1>Project Helios</h1>
           <span>V1.0</span>
           
@@ -815,8 +842,8 @@ export default function App() {
             <span style={{ color: 'var(--neon-blue)' }}>{utcTime}</span>
           </div>
           <div className="stat-item">
-            <div className="status-dot"></div>
-            <span style={{ color: '#fff' }}>SYSTEM OK</span>
+            <div className="status-dot" style={{ backgroundColor: 'var(--neon-green)', boxShadow: '0 0 8px var(--neon-green)' }}></div>
+            <span style={{ color: '#fff' }}>NET: {networkSpeed} MB/s</span>
           </div>
         </div>
       </header>
@@ -1035,7 +1062,7 @@ export default function App() {
       </aside>
 
       {/* Bottom Panel Overlay */}
-      <footer className="bottom-overlay glass-panel">
+      <footer className={`bottom-overlay glass-panel ${isBottomExpanded ? 'expanded' : ''}`}>
         {/* NASA APOD Section */}
         <div style={{ overflow: 'hidden' }}>
           <div className="widget-title" style={{ marginBottom: '8px' }}>
@@ -1096,6 +1123,15 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Immersive Space Intel Drawer Tab */}
+      <div 
+        className={`space-intel-tab ${isBottomExpanded ? 'expanded' : ''} ${isImmersive ? 'visible' : ''}`}
+        onClick={() => setIsBottomExpanded(!isBottomExpanded)}
+      >
+        <span className="tab-arrow">{isBottomExpanded ? '▼' : '▲'}</span>
+        <span className="tab-text">SPACE INTEL</span>
+      </div>
     </div>
   );
 }
