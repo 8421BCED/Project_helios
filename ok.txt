@@ -1,0 +1,39 @@
+================================================================================
+PROJECT HELIOS - EXTERNAL APIS & INTEGRATED DATA SOURCES
+================================================================================
+
+1. SATELLITE TELEMETRY (CelesTrak)
+   - Source: CelesTrak TLE (Two-Line Element) GP Feeds
+   - URL: https://celestrak.org/NORAD/elements/
+   - Purpose: Retrieves raw orbital tracking data for 4 main categories:
+     * Space Stations (ISS, Tiangong, etc.)
+     * Weather Satellites
+     * GPS Satellites
+     * Starlink Constellations
+   - Propagation: Translated using the 'predict4java' library (SGP4 propagator) 
+     to calculate real-time latitude, longitude, altitude, velocity, and 
+     orbital ground track paths.
+
+2. METEOROLOGICAL DATA (OpenWeatherMap)
+   - Source: OpenWeatherMap Current Weather API
+   - URL: https://api.openweathermap.org/data/2.5/weather
+   - Purpose: Fetches current temperature, humidity, pressure, wind speed, 
+     and weather description for any location clicked on the 3D Globe.
+
+3. ASTRONOMICAL DATA TIMETABLE (USNO)
+   - Source: U.S. Naval Observatory (USNO) Api
+   - URL: https://aa.usno.navy.mil/api/rstt/oneday
+   - Purpose: Provides precise daily Sun and Moon rise, set, and transit times 
+     based on coordinates.
+
+4. DEEP SPACE IMAGERY (NASA APOD)
+   - Source: NASA Astronomy Picture of the Day (APOD) API
+   - URL: https://api.nasa.gov/planetary/apod
+   - Purpose: Retrieves the daily featured deep space photography, copyright 
+     information, and scientific explanation to display in the UI drawer.
+
+5. CELESTIAL STARS MAPPING (CesiumJS)
+   - Source: Built-in ECI (Earth-Centered Inertial) frame calculations
+   - Purpose: Maps major stars (Sirius, Polaris, Vega, etc.) dynamically 
+     across the background in sync with the Earth's real-time rotation.
+================================================================================
