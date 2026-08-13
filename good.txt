@@ -1,0 +1,37 @@
+================================================================================
+PROJECT HELIOS - MISSION SUMMARY & TECHNICAL ARCHITECTURE
+================================================================================
+
+1. WHAT IS PROJECT HELIOS?
+   Project Helios is a state-of-the-art, interactive 3D Space Intelligence 
+   and Meteorological Dashboard. It integrates real-time satellite telemetry, 
+   live localized weather analytics, and celestial astronomical timetables 
+   into a single, high-fidelity user interface.
+
+2. CORE PURPOSE
+   - Visualizing space distributions of active satellites (ISS, Weather, 
+     GPS, Starlink) over a 3D digital representation of Earth.
+   - Correlating satellite coordinates with local meteorological systems 
+     (weather) and celestial cycles (Sun/Moon timetables) at clicked coordinates.
+   - Providing administrators with a secure control console to audite user 
+     sessions, telemetry interactions, and account management.
+
+3. THE "TOUGHNESS" (Technical Complexity & Challenges Solved)
+   - Real-Time Orbital Mechanics: Instead of hardcoded points, the backend 
+     dynamically runs SGP4/SDP4 Keplerian propagation algorithms on raw 
+     Two-Line Element (TLE) datasets. It calculates real-time latitude, 
+     longitude, altitude, speed, period, and full orbital ground track 
+     projections on every call.
+   - Async Caching Engine: CelesTrak TLE feeds are cached in-memory and 
+     persisted locally as JSON, with automated asynchronous refresh intervals 
+     to prevent API rate-limiting and ensure zero-delay frontend response times.
+   - Celestial Realism: Integrating Earth-Centered Inertial (ECI) coordinate 
+     frame calculations into CesiumJS. Stars (Polaris, Sirius, Vega) drift 
+     realistically across the dome background in sync with Earth's physical rotation.
+   - Secure Auditing Backend: A robust Spring Boot REST API coupled with a 
+     MySQL database tracks user interests, active sessions, and provides 
+     secure administrative gateway controls (with credential query/header checks).
+   - Premium Cinema Mode UI: A custom glassmorphism design built using 
+     CSS-accelerated 3D grids that smoothly retracts headers, sidebars, 
+     and drawers for an immersive visual experience.
+================================================================================
