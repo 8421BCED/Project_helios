@@ -1,0 +1,103 @@
+================================================================================
+PROJECT HELIOS - FULL SYSTEM ENDPOINTS & DIAGNOSTIC GUIDE
+================================================================================
+
+--------------------------------------------------------------------------------
+1. FRONTEND USER-FACING ROUTE LINKS (Open in Browser)
+--------------------------------------------------------------------------------
+* Main User Dashboard:
+  http://localhost:5173/
+
+* Administrative Gateway:
+  http://localhost:5173/admin
+
+--------------------------------------------------------------------------------
+2. BACKEND API ENDPOINTS (HTTP Gateway on port 8080)
+--------------------------------------------------------------------------------
+
+[A] AUTHENTICATION GATEWAY
+* User Registration (POST):
+  http://localhost:8080/api/auth/register
+  - Payload: { "username": "jane_doe", "email": "jane@helios.org", "password": "secure_password" }
+
+* User Login (POST):
+  http://localhost:8080/api/auth/login
+  - Payload: { "username": "jane_doe", "password": "secure_password" }
+
+* User Active Session Ping (POST):
+  http://localhost:8080/api/auth/ping
+  - Payload: { "username": "jane_doe", "deltaSeconds": 10 }
+
+* Record User Click/Interest Category (POST):
+  http://localhost:8080/api/auth/interest
+  - Payload: { "username": "jane_doe", "category": "weather" }
+
+
+[B] ADMINISTRATIVE OPERATIONS (Requires HTTP Header: X-Admin-Password: sweet)
+* Retrieve All Registered Users (GET):
+  http://localhost:8080/api/admin/users
+
+* Create User Manually (POST):
+  http://localhost:8080/api/admin/users
+  - Payload: { "username": "admin_added_user", "email": "admin@helios.org", "password": "default_password" }
+
+* Update User (PUT):
+  http://localhost:8080/api/admin/users/{id}
+  - Example: http://localhost:8080/api/admin/users/1
+  - Payload: { "username": "updated_name", "email": "new_email@helios.org", "password": "new_password" }
+
+* Delete User (DELETE):
+  http://localhost:8080/api/admin/users/{id}
+  - Example: http://localhost:8080/api/admin/users/1
+
+
+[C] SATELLITE TELEMETRY & CACHING
+* Retrieve Satellites by Category (GET):
+  http://localhost:8080/api/satellites/{group}
+  - Groups: stations | weather | gps | starlink
+  - Examples:
+    http://localhost:8080/api/satellites/stations
+    http://localhost:8080/api/satellites/weather
+    http://localhost:8080/api/satellites/gps
+    http://localhost:8080/api/satellites/starlink
+
+* Force CelesTrak TLE Cache Refresh (POST):
+  http://localhost:8080/api/satellites/refresh
+
+
+[D] WEATHER & METEOROLOGICAL FEEDS
+* Retrieve Weather at Coordinates (GET):
+  http://localhost:8080/api/weather?lat={latitude}&lon={longitude}
+  - Example: http://localhost:8080/api/weather?lat=37.77&lon=-122.41
+
+
+[E] ASTRONOMICAL DATA FEEDS
+* Retrieve Sun/Moon Rise-Set cycles from USNO (GET):
+  http://localhost:8080/api/astronomy?coords={latitude},{longitude}
+  - Example: http://localhost:8080/api/astronomy?coords=37.77,-122.41
+
+* Retrieve NASA APOD Deep Space Image (GET):
+  http://localhost:8080/api/nasa/apod
+
+--------------------------------------------------------------------------------
+3. SQL DATABASE AND SERVICE DIAGNOSTIC COMMANDS
+--------------------------------------------------------------------------------
+
+* Check if MySQL Community Server is active/running:
+  sudo systemctl status mysql
+
+* Restart MySQL service:
+  sudo systemctl restart mysql
+
+* Connect to the MySQL interactive Shell:
+  mysql -u root -p2525
+
+* List all databases:
+  mysql -u root -p2525 -e "show databases;"
+
+* Show tables inside the 'helios' schema:
+  mysql -u root -p2525 -D helios -e "show tables;"
+
+* List all users from the user roster table:
+  mysql -u root -p2525 -D helios -e "select * from users;"
+================================================================================
