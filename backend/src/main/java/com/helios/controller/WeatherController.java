@@ -21,8 +21,8 @@ public class WeatherController {
      */
     @GetMapping
     public ResponseEntity<Map<String, Object>> getWeatherAtCoordinates(
-            @RequestParam double lat,
-            @RequestParam double lon) {
+            @RequestParam(required = false, defaultValue = "0.0") double lat,
+            @RequestParam(required = false, defaultValue = "0.0") double lon) {
         Map<String, Object> data = weatherService.getWeather(lat, lon);
         return ResponseEntity.ok(data);
     }

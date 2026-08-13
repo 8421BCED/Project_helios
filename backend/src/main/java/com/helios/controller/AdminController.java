@@ -19,13 +19,22 @@ public class AdminController {
         this.userService = userService;
     }
 
-    private boolean isNotAuthorized(String password) {
-        return password == null || !password.equals("sweet");
+    private boolean isNotAuthorized(String headerPassword, String queryPassword) {
+        if (headerPassword != null && headerPassword.equals("sweet")) {
+            return false;
+        }
+        if (queryPassword != null && queryPassword.equals("sweet")) {
+            return false;
+        }
+        return true;
     }
 
     @GetMapping("/users")
-    public ResponseEntity<?> getAllUsers(@RequestHeader(value = "X-Admin-Password", required = false) String adminPassword) {
-        if (isNotAuthorized(adminPassword)) {
+    public ResponseEntity<?> getAllUsers(
+            @RequestHeader(value = "X-Admin-Password", required = false) String adminPassword,
+            @RequestParam(value = "password", required = false) String queryPassword
+    ) {
+        if (isNotAuthorized(adminPassword, queryPassword)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized: Invalid admin password"));
         }
         List<User> users = userService.getAllUsers();
@@ -35,9 +44,10 @@ public class AdminController {
     @PostMapping("/users")
     public ResponseEntity<?> createUser(
             @RequestHeader(value = "X-Admin-Password", required = false) String adminPassword,
+            @RequestParam(value = "password", required = false) String queryPassword,
             @RequestBody User user
     ) {
-        if (isNotAuthorized(adminPassword)) {
+        if (isNotAuthorized(adminPassword, queryPassword)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized: Invalid admin password"));
         }
         try {
@@ -51,10 +61,11 @@ public class AdminController {
     @PutMapping("/users/{id}")
     public ResponseEntity<?> updateUser(
             @RequestHeader(value = "X-Admin-Password", required = false) String adminPassword,
+            @RequestParam(value = "password", required = false) String queryPassword,
             @PathVariable Long id,
             @RequestBody User userDetails
     ) {
-        if (isNotAuthorized(adminPassword)) {
+        if (isNotAuthorized(adminPassword, queryPassword)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized: Invalid admin password"));
         }
         try {
@@ -68,9 +79,10 @@ public class AdminController {
     @DeleteMapping("/users/{id}")
     public ResponseEntity<?> deleteUser(
             @RequestHeader(value = "X-Admin-Password", required = false) String adminPassword,
+            @RequestParam(value = "password", required = false) String queryPassword,
             @PathVariable Long id
     ) {
-        if (isNotAuthorized(adminPassword)) {
+        if (isNotAuthorized(adminPassword, queryPassword)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized: Invalid admin password"));
         }
         try {

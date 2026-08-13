@@ -12,17 +12,20 @@ PROJECT HELIOS - FULL SYSTEM ENDPOINTS & DIAGNOSTIC GUIDE
   http://localhost:5173/admin
 
 --------------------------------------------------------------------------------
-2. BACKEND API ENDPOINTS (HTTP Gateway on port 8080)
+2. BACKEND API ENDPOINTS (HTTP Gateway on port 8080 OR Vite Proxy on port 5173)
 --------------------------------------------------------------------------------
+NOTE: You can open all links on either:
+      - Port 8080 (Direct backend): http://localhost:8080/api/...
+      - Port 5173 (Vite dev server proxy): http://localhost:5173/api/... (prevents white page errors)
 
 [A] AUTHENTICATION GATEWAY
-* User Registration (POST):
+* User Registration (POST / GET help):
   http://localhost:8080/api/auth/register
-  - Payload: { "username": "jane_doe", "email": "jane@helios.org", "password": "secure_password" }
+  - Payload (POST): { "username": "jane_doe", "email": "jane@helios.org", "password": "secure_password" }
 
-* User Login (POST):
+* User Login (POST / GET help):
   http://localhost:8080/api/auth/login
-  - Payload: { "username": "jane_doe", "password": "secure_password" }
+  - Payload (POST): { "username": "jane_doe", "password": "secure_password" }
 
 * User Active Session Ping (POST):
   http://localhost:8080/api/auth/ping
@@ -33,22 +36,23 @@ PROJECT HELIOS - FULL SYSTEM ENDPOINTS & DIAGNOSTIC GUIDE
   - Payload: { "username": "jane_doe", "category": "weather" }
 
 
-[B] ADMINISTRATIVE OPERATIONS (Requires HTTP Header: X-Admin-Password: sweet)
+[B] ADMINISTRATIVE OPERATIONS (Requires header 'X-Admin-Password: sweet' OR query param '?password=sweet')
 * Retrieve All Registered Users (GET):
-  http://localhost:8080/api/admin/users
+  http://localhost:8080/api/admin/users?password=sweet
+  - Vite Proxy: http://localhost:5173/api/admin/users?password=sweet
 
 * Create User Manually (POST):
-  http://localhost:8080/api/admin/users
+  http://localhost:8080/api/admin/users?password=sweet
   - Payload: { "username": "admin_added_user", "email": "admin@helios.org", "password": "default_password" }
 
 * Update User (PUT):
-  http://localhost:8080/api/admin/users/{id}
-  - Example: http://localhost:8080/api/admin/users/1
+  http://localhost:8080/api/admin/users/{id}?password=sweet
+  - Example: http://localhost:8080/api/admin/users/1?password=sweet
   - Payload: { "username": "updated_name", "email": "new_email@helios.org", "password": "new_password" }
 
 * Delete User (DELETE):
-  http://localhost:8080/api/admin/users/{id}
-  - Example: http://localhost:8080/api/admin/users/1
+  http://localhost:8080/api/admin/users/{id}?password=sweet
+  - Example: http://localhost:8080/api/admin/users/1?password=sweet
 
 
 [C] SATELLITE TELEMETRY & CACHING

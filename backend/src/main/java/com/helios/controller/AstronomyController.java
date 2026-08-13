@@ -22,7 +22,7 @@ public class AstronomyController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAstronomyDetails(
             @RequestParam(required = false) String date,
-            @RequestParam String coords,
+            @RequestParam(required = false, defaultValue = "0.0,0.0") String coords,
             @RequestParam(required = false) String tz) {
         Map<String, Object> data = astronomyService.getCelestialData(date, coords, tz);
         return ResponseEntity.ok(data);

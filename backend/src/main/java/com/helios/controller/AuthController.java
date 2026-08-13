@@ -28,6 +28,22 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/register")
+    public ResponseEntity<?> registerGetHelp() {
+        return ResponseEntity.ok(Map.of(
+            "status", "online",
+            "info", "This endpoint requires a HTTP POST request. You can also register via the frontend portal.",
+            "url", "http://localhost:8080/api/auth/register",
+            "frontend_registration_page", "http://localhost:5173/",
+            "method", "POST",
+            "examplePayload", Map.of(
+                "username", "jane_doe",
+                "email", "jane@helios.org",
+                "password", "secure_password"
+            )
+        ));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         try {
@@ -38,6 +54,21 @@ public class AuthController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @GetMapping("/login")
+    public ResponseEntity<?> loginGetHelp() {
+        return ResponseEntity.ok(Map.of(
+            "status", "online",
+            "info", "This endpoint requires a HTTP POST request. You can also log in via the frontend portal.",
+            "url", "http://localhost:8080/api/auth/login",
+            "frontend_login_page", "http://localhost:5173/",
+            "method", "POST",
+            "examplePayload", Map.of(
+                "username", "jane_doe",
+                "password", "secure_password"
+            )
+        ));
     }
 
     @PostMapping("/ping")
