@@ -17,6 +17,8 @@ import CesiumGlobe from './components/CesiumGlobe';
 import GenerativeMountainScene from './components/ui/mountain-scene';
 import './App.css';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
 export default function App() {
   // --- A. AUTHENTICATION & ROUTING STATES ---
   const [loggedInUser, setLoggedInUser] = useState(() => {
@@ -124,7 +126,7 @@ export default function App() {
     try {
       const parsed = JSON.parse(saved);
       // Validate cached session on startup with a delta of 0 seconds
-      fetch('http://localhost:8080/api/auth/ping', {
+      fetch(`${API_BASE}/api/auth/ping`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: parsed.username, deltaSeconds: 0 })
@@ -161,7 +163,7 @@ export default function App() {
     setSelectedGroup(group);
     handleSelectSatellite(null);
     if (loggedInUser) {
-      fetch('http://localhost:8080/api/auth/interest', {
+      fetch(`${API_BASE}/api/auth/interest`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: loggedInUser.username, category: group })
@@ -185,7 +187,7 @@ export default function App() {
       const currentUser = loggedInUserRef.current;
       if (!currentUser) return;
 
-      fetch('http://localhost:8080/api/auth/ping', {
+      fetch(`${API_BASE}/api/auth/ping`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: currentUser.username, deltaSeconds: 10 })
@@ -223,7 +225,7 @@ export default function App() {
 
   // Fetch NASA APOD on mount
   useEffect(() => {
-    fetch('http://localhost:8080/api/nasa/apod')
+    fetch(`${API_BASE}/api/nasa/apod`)
       .then(res => res.json())
       .then(data => setApod(data))
       .catch(err => console.error("Error fetching APOD:", err));
@@ -234,7 +236,7 @@ export default function App() {
     if (!loggedInUser || currentPath === '/admin') return;
 
     const fetchSatellites = () => {
-      fetch(`http://localhost:8080/api/satellites/${selectedGroup}`)
+      fetch(`${API_BASE}/api/satellites/${selectedGroup}`)
         .then(res => res.json())
         .then(data => {
           setSatellites(data);
@@ -269,12 +271,12 @@ export default function App() {
 
     lastFetchedCoordsRef.current = { lat, lon };
 
-    fetch(`http://localhost:8080/api/weather?lat=${lat}&lon=${lon}`)
+    fetch(`${API_BASE}/api/weather?lat=${lat}&lon=${lon}`)
       .then(res => res.json())
       .then(data => setWeather(data))
       .catch(err => console.error("Error fetching weather:", err));
 
-    fetch(`http://localhost:8080/api/astronomy?coords=${lat},${lon}`)
+    fetch(`${API_BASE}/api/astronomy?coords=${lat},${lon}`)
       .then(res => res.json())
       .then(data => setAstronomy(data))
       .catch(err => console.error("Error fetching astronomy:", err));
@@ -311,9 +313,9 @@ export default function App() {
 
   const handleRefreshCache = () => {
     setIsRefreshing(true);
-    fetch('http://localhost:8080/api/satellites/refresh', { method: 'POST' })
+    fetch(`${API_BASE}/api/satellites/refresh`, { method: 'POST' })
       .then(res => res.json())
-      .then(() => fetch(`http://localhost:8080/api/satellites/${selectedGroup}`))
+      .then(() => fetch(`${API_BASE}/api/satellites/${selectedGroup}`))
       .then(res => res.json())
       .then(data => {
         setSatellites(data);
@@ -331,7 +333,7 @@ export default function App() {
     setAuthError('');
 
     if (authMode === 'login') {
-      fetch('http://localhost:8080/api/auth/login', {
+      fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: authUsername, password: authPassword })
@@ -349,7 +351,7 @@ export default function App() {
       })
       .catch(err => setAuthError(err.message));
     } else {
-      fetch('http://localhost:8080/api/auth/register', {
+      fetch(`${API_BASE}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: authUsername, email: authEmail, password: authPassword })
@@ -392,7 +394,7 @@ export default function App() {
   };
 
   const fetchAdminUsers = () => {
-    fetch('http://localhost:8080/api/admin/users', {
+    fetch(`${API_BASE}/api/admin/users`, {
       headers: { 'X-Admin-Password': 'sweet' }
     })
     .then(res => {
@@ -443,8 +445,8 @@ export default function App() {
     setCrudError('');
 
     const url = crudMode === 'create' 
-      ? 'http://localhost:8080/api/admin/users'
-      : `http://localhost:8080/api/admin/users/${crudUserId}`;
+      ? `${API_BASE}/api/admin/users`
+      : `${API_BASE}/api/admin/users/${crudUserId}`;
     
     const method = crudMode === 'create' ? 'POST' : 'PUT';
 
@@ -493,7 +495,7 @@ export default function App() {
   const handleDeleteUser = (id) => {
     if (!window.confirm("Are you sure you want to remove this user from the system database?")) return;
 
-    fetch(`http://localhost:8080/api/admin/users/${id}`, {
+    fetch(`${API_BASE}/api/admin/users/${id}`, {
       method: 'DELETE',
       headers: { 'X-Admin-Password': 'sweet' }
     })
