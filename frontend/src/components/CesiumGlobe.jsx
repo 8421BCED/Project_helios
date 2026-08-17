@@ -186,7 +186,7 @@ export default function CesiumGlobe({
       // Initialize moving clouds using a BillboardCollection of realistic, fluffy cloud textures
       const billboardCollection = viewer.scene.primitives.add(new Cesium.BillboardCollection());
       const tempClouds = [];
-      const cloudImageUrl = 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Cloud_PNG_Image.png/640px-Cloud_PNG_Image.png';
+      const cloudImageUrl = '/cloud.svg';
 
       // Spawn 60 procedural moving clouds around the globe
       for (let i = 0; i < 60; i++) {

@@ -234,10 +234,18 @@ public class SatellitePropagatorService {
                 "1 32260U 07062A   26045.24945763  .00000062  00000-0  00000-0 0  9995", 
                 "2 32260  55.5190  81.0423 0017120 205.1023 154.6738  2.00557434133451", "gps"));
 
+        List<SatelliteData> starlink = new ArrayList<>();
+        starlink.add(new SatelliteData("STARLINK-1008", 44714,
+                "1 44714U 19074B   26224.11745276  .00064224  00000+0  78239-3 0  9999",
+                "2 44714  53.1493 159.1634 0006301  44.0969 316.0546 15.59909730372913", "starlink"));
+        starlink.add(new SatelliteData("STARLINK-1012", 44718,
+                "1 44718U 19074F   26224.66668981  .00089293  00000+0  10661-2 0  9997",
+                "2 44718  53.1513 156.8008 0002037  83.0112 138.9242 15.60315246  5882", "starlink"));
+
         cachedSatellites.put("stations", stations);
         cachedSatellites.put("weather", weather);
         cachedSatellites.put("gps", gps);
-        cachedSatellites.put("starlink", new ArrayList<>()); // empty initially until fetched
+        cachedSatellites.put("starlink", starlink);
 
         saveToLocalStorage();
     }
