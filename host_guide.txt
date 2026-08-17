@@ -36,11 +36,10 @@ STEP 2: DEPLOY THE BACKEND ON RENDER (Free Web Service)
 3. Connect your GitHub repository.
 4. Fill in the following details:
    - Name: helios-backend
-   - Language: Java
+   - Language/Runtime: Docker
    - Root Directory: backend
    - Branch: main
-   - Build Command: mvn clean package -DskipTests
-   - Start Command: java -jar target/backend-0.0.1-SNAPSHOT.jar
+   - (Render will automatically detect the Dockerfile inside the backend folder and build/run it. You do not need to fill in Build or Start commands!)
 5. Scroll down, click "Advanced" and add the following Environment Variables:
    - SPRING_DATASOURCE_URL = jdbc:mysql://<host>:<port>/<database-name>?useSSL=false&allowPublicKeyRetrieval=true
      (Replace <host>, <port>, and <database-name> with credentials from Step 1)
