@@ -1,0 +1,71 @@
+================================================================================
+PROJECT HELIOS - 100% FREE FULL-STACK HOSTING GUIDE
+================================================================================
+
+This guide outlines how to host your React Frontend, Spring Boot Backend, 
+and MySQL Database online completely for free.
+
+--------------------------------------------------------------------------------
+STEP 1: SET UP A FREE ONLINE MYSQL DATABASE
+--------------------------------------------------------------------------------
+Render does not offer a free MySQL database, so we will use Aiven or Clever Cloud.
+
+Option A: Clever Cloud (Easiest & Instant)
+1. Go to https://www.clever-cloud.com/ and create a free account.
+2. Click "Create..." -> "an add-on".
+3. Choose "MySQL" (choose the free Shared plan).
+4. Name your database, select any region close to you, and click Link.
+5. In your Clever Cloud dashboard, copy the following database credentials:
+   - Host
+   - Database name
+   - Username
+   - Password
+   - Port (usually 3306)
+
+Option B: Aiven.io (Very Reliable)
+1. Go to https://aiven.io/ and sign up for a free trial/account.
+2. Create a new service and select "MySQL".
+3. Choose the "Free Plan" (available in specific regions like Oregon).
+4. Once running, copy the "Service URI" or connection parameters (Host, User, Password, Port).
+
+--------------------------------------------------------------------------------
+STEP 2: DEPLOY THE BACKEND ON RENDER (Free Web Service)
+--------------------------------------------------------------------------------
+1. Go to https://render.com/ and sign in.
+2. Click "New +" -> "Web Service".
+3. Connect your GitHub repository.
+4. Fill in the following details:
+   - Name: helios-backend
+   - Language: Java
+   - Root Directory: backend
+   - Branch: main
+   - Build Command: mvn clean package -DskipTests
+   - Start Command: java -jar target/backend-0.0.1-SNAPSHOT.jar
+5. Scroll down, click "Advanced" and add the following Environment Variables:
+   - SPRING_DATASOURCE_URL = jdbc:mysql://<host>:<port>/<database-name>?useSSL=false&allowPublicKeyRetrieval=true
+     (Replace <host>, <port>, and <database-name> with credentials from Step 1)
+   - SPRING_DATASOURCE_USERNAME = <username-from-step-1>
+   - SPRING_DATASOURCE_PASSWORD = <password-from-step-1>
+   - OPENWEATHER_API_KEY = <your-openweather-api-key>
+   - NASA_API_KEY = <your-nasa-api-key>
+6. Click "Create Web Service".
+7. Copy the backend service URL once deployed (e.g., https://helios-backend.onrender.com).
+
+--------------------------------------------------------------------------------
+STEP 3: DEPLOY THE FRONTEND ON RENDER (Free Static Site)
+--------------------------------------------------------------------------------
+1. In the Render Dashboard, click "New +" -> "Static Site".
+2. Connect your GitHub repository.
+3. Fill in the following details:
+   - Name: helios-frontend
+   - Root Directory: frontend
+   - Branch: main
+   - Build Command: npm install && npm run build
+   - Publish Directory: dist
+4. Click "Advanced" and add this Environment Variable:
+   - VITE_API_URL = <your-deployed-backend-url-from-step-2>
+     (Example: https://helios-backend.onrender.com)
+5. Click "Create Static Site".
+
+Your live application is now fully set up and ready to use!
+================================================================================
